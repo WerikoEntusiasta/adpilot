@@ -3,10 +3,8 @@ version: '3.8'
 services:
   adpilot:
     image: werikoliveira/adpilot:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: adpilot_saas
+    container_name: adpilot_zimaos
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
@@ -16,7 +14,6 @@ services:
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-    restart: unless-stopped
     x-casaos:
       envs:
         - container: STRIPE_SECRET_KEY
