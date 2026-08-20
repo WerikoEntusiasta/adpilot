@@ -43,6 +43,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/')
   }
 
+  const navigation = [...navItems]
+  if (mounted && auth.user?.role === 'ADMIN') {
+    navigation.push({ href: '/admin', label: 'Painel Admin', icon: ShieldCheck })
+  }
+
   const userName = mounted && auth.user ? auth.user.name : 'Usuário'
   const userInitial = userName.charAt(0).toUpperCase()
 

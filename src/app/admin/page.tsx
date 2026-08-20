@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { ShieldCheck, Users, CreditCard, Activity, Server, Zap, Search, UserCheck, Trash2, CheckCircle2, RefreshCw, AlertCircle, DollarSign, Settings, Lock, KeyRound, Loader2, BrainCircuit } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-store'
+import { useRouter } from 'next/navigation'
 
 interface UserRecord {
   id: string
@@ -21,11 +23,9 @@ interface UserRecord {
 }
 
 export default function AdminPage() {
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
-  const [adminEmailInput, setAdminEmailInput] = useState('admin@adpilot.ai')
-  const [adminPasswordInput, setAdminPasswordInput] = useState('')
-  const [authError, setAuthError] = useState<string | null>(null)
-  const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const { user, isAuthenticated } = useAuth()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
 
   // Real data state
   const [users, setUsers] = useState<UserRecord[]>([])
@@ -46,8 +46,20 @@ export default function AdminPage() {
   const [aiModel, setAiModel] = useState('opencode-zen')
   const [savedSettings, setSavedSettings] = useState(false)
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Check auth
+  useEffect(() => {
+    if (mounted && (!isAuthenticated || user?.role !== 'ADMIN')) {
+      router.push('/dashboard')
+    }
+  }, [mounted, isAuthenticated, user, router])
+
   // Fetch real data from SQLite
   const fetchRealData = async () => {
+    if (!mounted || user?.role !== 'ADMIN') return
     setIsLoadingUsers(true)
     try {
       const res = await fetch('/api/admin/users')
@@ -75,37 +87,10 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (isAdminAuthenticated) {
+    if (mounted && user?.role === 'ADMIN') {
       fetchRealData()
     }
-  }, [isAdminAuthenticated])
-
-  const handleAdminAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsAuthenticating(true)
-    setAuthError(null)
-
-    try {
-      const res = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: adminEmailInput,
-          password: adminPasswordInput,
-        }),
-      })
-
-      const data = await res.json()
-      if (res.ok && data.success) {
-        setIsAdminAuthenticated(true)
-      } else {
-        setAuthError(data.error || 'Credenciais de Admin incorretas.')
-      }
-    } catch (err) {
-      setAuthError(err instanceof Error ? err.message : 'Erro de conexão')
-    }
-    setIsAuthenticating(false)
-  }
+  }, [mounted, user])
 
   const saveGlobalSettings = async () => {
     try {
@@ -130,10 +115,10 @@ export default function AdminPage() {
   }
 
   // Toggle user subscription status in SQLite
-  const toggleSubscription = async (user: UserRecord) => {
-    const nextStatus = user.subscriptionStatus === 'ACTIVE_PRO' ? 'FREE_DEMO' : 'ACTIVE_PRO'
+  const toggleSubscription = async (userRecord: UserRecord) => {
+    const nextStatus = userRecord.subscriptionStatus === 'ACTIVE_PRO' ? 'FREE_DEMO' : 'ACTIVE_PRO'
     try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await fetch(`/api/admin/users/${userRecord.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscriptionStatus: nextStatus }),
@@ -145,10 +130,10 @@ export default function AdminPage() {
   }
 
   // Toggle user role in SQLite
-  const toggleRole = async (user: UserRecord) => {
-    const nextRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN'
+  const toggleRole = async (userRecord: UserRecord) => {
+    const nextRole = userRecord.role === 'ADMIN' ? 'USER' : 'ADMIN'
     try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await fetch(`/api/admin/users/${userRecord.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: nextRole }),
@@ -180,64 +165,8 @@ export default function AdminPage() {
     return matchesSearch && matchesRole && matchesPlan
   })
 
-  // Render Login Modal if not authenticated
-  if (!isAdminAuthenticated) {
-    return (
-      <div className="max-w-md mx-auto py-12 mt-20">
-        <Card className="border-primary/40 shadow-xl">
-          <CardHeader className="text-center">
-            <div className="mx-auto h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary mb-2">
-              <Lock className="h-6 w-6" />
-            </div>
-            <CardTitle className="text-2xl">Acesso Restrito ao Admin</CardTitle>
-            <CardDescription>
-              Insira as credenciais de Administrador definidas nas variáveis de ambiente.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAdminAuth} className="space-y-4">
-              {authError && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="admin-email">E-mail do Administrador (ADMIN_EMAIL)</Label>
-                <Input
-                  id="admin-email"
-                  type="email"
-                  value={adminEmailInput}
-                  onChange={e => setAdminEmailInput(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="admin-pwd">Senha do Administrador (ADMIN_PASSWORD)</Label>
-                <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="admin-pwd"
-                    type="password"
-                    placeholder="Digite ADMIN_PASSWORD..."
-                    value={adminPasswordInput}
-                    onChange={e => setAdminPasswordInput(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full h-10 font-bold gap-2" disabled={isAuthenticating}>
-                {isAuthenticating ? <><Loader2 className="h-4 w-4 animate-spin" /> Autenticando...</> : <><ShieldCheck className="h-4 w-4" /> Entrar no Painel Admin</>}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  if (!mounted || !isAuthenticated || user?.role !== 'ADMIN') {
+    return <div className="flex items-center justify-center h-[50vh]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
   }
 
   return (
