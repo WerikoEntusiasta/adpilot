@@ -1,19 +1,7 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import Stripe from 'stripe'
-
-// In-memory subscription store (single-user app — no DB needed)
-// In production, replace with database lookup
-const subscriptions = new Map<string, {
-  status: 'active' | 'canceled' | 'past_due' | 'incomplete' | 'trialing' | 'unpaid'
-  subscriptionId: string
-  currentPeriodEnd: number
-  customerId: string
-}>()
-
-export function getSubscriptionStatus(email: string) {
-  return subscriptions.get(email) || null
-}
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -41,21 +29,18 @@ export async function POST(request: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
         const email = session.customer_email || session.customer_details?.email || ''
-        const subscriptionId = session.subscription as string
         const customerId = session.customer as string
 
-        if (subscriptionId && email) {
-          // Fetch subscription details to get period end
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-
-          subscriptions.set(email, {
-            status: subscription.status as 'active' | 'canceled' | 'past_due' | 'incomplete' | 'trialing' | 'unpaid',
-            subscriptionId,
-            currentPeriodEnd: (subscription as any).current_period_end,
-            customerId,
+        if (email && customerId) {
+          // Atualiza o banco de dados via Prisma
+          await prisma.user.updateMany({
+            where: { email },
+            data: {
+              subscriptionStatus: 'ACTIVE_PRO',
+              stripeCustomerId: customerId
+            }
           })
-
-          console.log(`[AdPilot Webhook] Assinatura ativada para ${email} — Status: ${subscription.status}`)
+          console.log(`[AdPilot Webhook] Assinatura ativada no SQLite para ${email}`)
         }
         break
       }
@@ -63,19 +48,21 @@ export async function POST(request: Request) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
-
-        // Find email by customer ID
-        const email = findEmailByCustomerId(customerId)
-        if (email) {
-          subscriptions.set(email, {
-            status: subscription.status as 'active' | 'canceled' | 'past_due' | 'incomplete' | 'trialing' | 'unpaid',
-            subscriptionId: subscription.id,
-            currentPeriodEnd: (subscription as any).current_period_end,
-            customerId,
-          })
-
-          console.log(`[AdPilot Webhook] Assinatura atualizada para ${email} — Status: ${subscription.status}`)
+        
+        const statusMap: Record<string, string> = {
+          active: 'ACTIVE_PRO',
+          past_due: 'FREE_DEMO',
+          unpaid: 'FREE_DEMO',
+          canceled: 'FREE_DEMO',
         }
+        
+        const newStatus = statusMap[subscription.status] || 'FREE_DEMO'
+
+        await prisma.user.updateMany({
+          where: { stripeCustomerId: customerId },
+          data: { subscriptionStatus: newStatus }
+        })
+        console.log(`[AdPilot Webhook] Assinatura atualizada no SQLite para status: ${subscription.status}`)
         break
       }
 
@@ -83,27 +70,23 @@ export async function POST(request: Request) {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
 
-        const email = findEmailByCustomerId(customerId)
-        if (email) {
-          subscriptions.delete(email)
-          console.log(`[AdPilot Webhook] Assinatura cancelada para ${email}`)
-        }
+        await prisma.user.updateMany({
+          where: { stripeCustomerId: customerId },
+          data: { subscriptionStatus: 'FREE_DEMO' }
+        })
+        console.log(`[AdPilot Webhook] Assinatura cancelada no SQLite para stripeCustomerId: ${customerId}`)
         break
       }
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
         const customerId = invoice.customer as string
-        const email = findEmailByCustomerId(customerId)
 
-        if (email) {
-          const sub = subscriptions.get(email)
-          if (sub) {
-            sub.status = 'past_due'
-            subscriptions.set(email, sub)
-          }
-          console.log(`[AdPilot Webhook] Pagamento falhou para ${email}`)
-        }
+        await prisma.user.updateMany({
+          where: { stripeCustomerId: customerId },
+          data: { subscriptionStatus: 'FREE_DEMO' }
+        })
+        console.log(`[AdPilot Webhook] Pagamento falhou. Rebaixado para FREE_DEMO.`)
         break
       }
 
@@ -117,11 +100,4 @@ export async function POST(request: Request) {
     console.error(`[AdPilot Webhook] Erro ao processar ${event.type}: ${message}`)
     return NextResponse.json({ error: message }, { status: 500 })
   }
-}
-
-function findEmailByCustomerId(customerId: string): string | undefined {
-  for (const [email, sub] of subscriptions.entries()) {
-    if (sub.customerId === customerId) return email
-  }
-  return undefined
 }
