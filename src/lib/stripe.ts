@@ -24,7 +24,7 @@ export async function createAdPilotCheckoutSession(params: {
 
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
     mode: 'subscription',
-    payment_method_types: ['card'],
+    payment_method_types: ['card', 'pix'],
     customer_email: email,
     line_items: [],
     success_url: successUrl,
