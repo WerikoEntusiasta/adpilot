@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,7 @@ interface AiModelItem {
   name: string
 }
 
-export default function SettingsPage() {
+function SettingsContent() {
   const settings = useSettings()
   const searchParams = useSearchParams()
 
@@ -477,5 +477,13 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-muted-foreground text-sm">Carregando configurações...</div>}>
+      <SettingsContent />
+    </Suspense>
   )
 }
