@@ -5,6 +5,9 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
+# Install dependencies for native modules (e.g. better-sqlite3)
+RUN apk add --no-cache python3 make g++ sqlite-dev
+
 # Install dependencies
 RUN npm install
 
