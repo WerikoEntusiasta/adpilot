@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "agent": "tsx agent/adpilot-agent.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.0.0",
