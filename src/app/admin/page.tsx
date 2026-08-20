@@ -269,7 +269,7 @@ export default function AdminPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Faturamento MRR Real</p>
                 <p className="text-2xl font-bold">{formatCurrency(mrr)}</p>
-                <p className="text-xs text-emerald-400 mt-1">Calculado sobre assinantes Pro no SQLite</p>
+                <p className="text-xs text-emerald-400 mt-1">Dados reais puxados da API do Stripe</p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
                 <DollarSign className="h-6 w-6" />
@@ -282,9 +282,9 @@ export default function AdminPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Assinantes Pro no SQLite</p>
-                <p className="text-2xl font-bold">{activeProCount} <span className="text-sm font-normal text-muted-foreground">/ {totalUsersCount}</span></p>
-                <p className="text-xs text-muted-foreground mt-1">Baseado no plano atual</p>
+                <p className="text-sm font-medium text-muted-foreground">Assinantes Pro (Stripe Ativos)</p>
+                <p className="text-2xl font-bold">{activeProCount} <span className="text-sm font-normal text-muted-foreground">/ {totalUsersCount} Usuários</span></p>
+                <p className="text-xs text-muted-foreground mt-1">Sincronizado com Stripe</p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                 <CreditCard className="h-6 w-6" />
