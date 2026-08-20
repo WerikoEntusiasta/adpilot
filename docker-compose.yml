@@ -19,14 +19,15 @@ services:
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_APP_URL=https://adpilot.amplificagroup.com/
+      - STRIPE_PRICE_ID=price_ADICIONAR_PRICE_ID_AQUI
     restart: unless-stopped
     x-casaos:
       envs:
         - container: STRIPE_SECRET_KEY
           description:
-            en_us: "Stripe Secret Key (sk_live_... or sk_test_...)"
-            pt_br: "Chave Secreta do Stripe para assinatura de R$ 250/mês"
+            en_us: "Stripe Secret Key (sk_live_...)"
+            pt_br: "Chave Secreta do Stripe (sk_live_...)"
         - container: STRIPE_WEBHOOK_SECRET
           description:
             en_us: "Stripe Webhook Secret (whsec_...)"
@@ -37,8 +38,8 @@ services:
             pt_br: "Chave Pública do Stripe"
         - container: NEXT_PUBLIC_APP_URL
           description:
-            en_us: "App Domain URL (e.g. http://192.168.1.100:3000)"
-            pt_br: "URL da Aplicação (Ex: http://zimaos.local:3000)"
+            en_us: "App Domain URL"
+            pt_br: "URL da Aplicação"
       port_map: "3000"
 
 x-casaos:

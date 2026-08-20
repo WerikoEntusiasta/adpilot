@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -30,10 +31,17 @@ model UserSettings {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   fbAccessToken  String?
   fbAdAccountId  String?
-  aiEndpoint     String?  @default("https://api.openai.com/v1")
-  aiApiKey       String?
-  aiModel        String?  @default("opencode-zen")
   updatedAt      DateTime @updatedAt
+}
+
+model GlobalSetting {
+  id              String   @id @default("GLOBAL")
+  aiEndpoint      String?  @default("https://api.openai.com/v1")
+  aiApiKey        String?
+  aiModel         String?  @default("opencode-zen")
+  globalPrice     Int      @default(250)
+  maintenanceMode Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
 }
 
 model AuditLog {

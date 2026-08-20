@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createStripeCheckoutSession } from '@/lib/stripe'
+import { createAdPilotCheckoutSession } from '@/lib/stripe'
 
 export async function POST(request: Request) {
   try {
@@ -10,13 +10,13 @@ export async function POST(request: Request) {
     const cancelUrl = `${origin}/`
 
     // Create session via Stripe SDK using environment variables
-    const session = await createStripeCheckoutSession({
-      userEmail,
+    const session = await createAdPilotCheckoutSession({
+      email: userEmail,
       successUrl,
       cancelUrl,
     })
 
-    return NextResponse.json({ url: session.url, sessionId: session.id })
+    return NextResponse.json({ url: session.url, sessionId: session.sessionId })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro ao criar sessão de pagamento no Stripe'
     return NextResponse.json({ error: message }, { status: 500 })
