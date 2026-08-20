@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                 String        @id @default(uuid())
+  name               String
+  email              String        @unique
+  password           String
+  role               String        @default("USER") // ADMIN | USER
+  subscriptionStatus String        @default("FREE_DEMO") // ACTIVE_PRO | FREE_DEMO
+  stripeCustomerId   String?
+  lgpdConsent        Boolean       @default(true)
+  lgpdConsentDate    DateTime      @default(now())
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  settings           UserSettings?
+  auditLogs          AuditLog[]
+  lgpdRequests       LgpdRequest[]
+}
+
+model UserSettings {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fbAccessToken  String?
+  fbAdAccountId  String?
+  aiEndpoint     String?  @default("https://api.openai.com/v1")
+  aiApiKey       String?
+  aiModel        String?  @default("opencode-zen")
+  updatedAt      DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // e.g. "USER_LOGIN", "DATA_EXPORT", "SETTINGS_UPDATE", "ACCOUNT_DELETE"
+  ipAddress String?
+  userAgent String?
+  details   String?  // JSON string
+  createdAt DateTime @default(now())
+}
+
+model LgpdRequest {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String    // EXPORT | DELETE | RECTIFY
+  status      String    @default("COMPLETED") // PENDING | COMPLETED
+  requestedAt DateTime  @default(now())
+  completedAt DateTime? @default(now())
+}

@@ -16,7 +16,7 @@ import {
   X,
   Rocket,
   LogOut,
-  User as UserIcon,
+  ShieldCheck,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-store'
 
@@ -26,6 +26,7 @@ const navItems = [
   { href: '/dashboard/advisor', label: 'IA Advisor', icon: Brain },
   { href: '/dashboard/planner', label: 'Planejador', icon: CalendarPlus },
   { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
+  { href: '/dashboard/admin', label: 'Painel Admin', icon: ShieldCheck },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

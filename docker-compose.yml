@@ -9,9 +9,13 @@ services:
     container_name: adpilot_saas
     ports:
       - "3000:3000"
+    volumes:
+      - /DATA/AppData/adpilot/data:/app/prisma
+      - /DATA/AppData/adpilot/uploads:/app/public/uploads
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - DATABASE_URL=file:/app/prisma/dev.db
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
@@ -45,8 +49,8 @@ x-casaos:
   author: werikoliveira
   category: Marketing & AI
   description:
-    en_us: "AdPilot AI — Autonomous Paid Traffic SaaS for Facebook Ads with OpenCode AI and Stripe Billing."
-    pt_br: "AdPilot AI — SaaS de Gestão de Tráfego Pago Autônomo para Facebook Ads com IA e Stripe."
+    en_us: "AdPilot AI — Autonomous Paid Traffic SaaS for Facebook Ads with OpenCode AI, SQLite & Stripe Billing."
+    pt_br: "AdPilot AI — SaaS de Gestão de Tráfego Pago Autônomo para Facebook Ads com IA, SQLite e LGPD."
   developer: WerikoEntusiasta
   icon: https://raw.githubusercontent.com/WerikoEntusiasta/adpilot/main/public/icon.png
   tagline:

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.0.0",
+    "@prisma/client": "^7.9.1",
     "@radix-ui/react-alert-dialog": "^1.1.0",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.0",
@@ -38,6 +39,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.0",
+    "sqlite3": "^6.0.1",
     "stripe": "^22.5.0",
     "tailwind-merge": "^2.5.0",
     "tailwindcss-animate": "^1.0.7",
@@ -52,6 +54,7 @@
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.0.0",
+    "prisma": "^7.9.1",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0"
   }
