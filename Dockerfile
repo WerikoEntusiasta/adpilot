@@ -11,6 +11,9 @@ RUN npm install
 # Copy application source
 COPY . .
 
+# Generate Prisma Client for SQLite
+RUN npx prisma generate
+
 # Build Next.js app
 RUN npm run build
 
