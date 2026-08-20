@@ -36,20 +36,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    if (mounted) {
+      if (!auth.isAuthenticated) {
+        router.push('/')
+      } else if (auth.user?.role === 'ADMIN') {
+        router.push('/admin')
+      }
+    }
+  }, [mounted, auth.isAuthenticated, auth.user, router])
 
   const handleLogout = () => {
     auth.logout()
     router.push('/')
   }
 
-  const navigation = [...navItems]
-  if (mounted && auth.user?.role === 'ADMIN') {
-    navigation.push({ href: '/admin', label: 'Painel Admin', icon: ShieldCheck })
-  }
-
   const userName = mounted && auth.user ? auth.user.name : 'Usuário'
   const userInitial = userName.charAt(0).toUpperCase()
+
+  if (!mounted || auth.user?.role === 'ADMIN') return null
 
   return (
     <div className="min-h-screen flex">

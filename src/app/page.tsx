@@ -54,7 +54,11 @@ export default function AuthPage() {
       setAuth(data.user, data.token)
       setSuccessMsg('Login realizado! Entrando...')
       setTimeout(() => {
-        router.push('/dashboard')
+        if (data.user.role === 'ADMIN') {
+          router.push('/admin')
+        } else {
+          router.push('/dashboard')
+        }
       }, 500)
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Erro de conexão')
