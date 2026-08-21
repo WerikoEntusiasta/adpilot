@@ -29,4 +29,8 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-CMD ["npm", "start"]
+# Entrypoint: run migrations then start app
+COPY entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+
+CMD ["./entrypoint.sh"]
