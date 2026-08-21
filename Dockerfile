@@ -21,6 +21,9 @@ RUN npm install
 # Copy application source
 COPY . .
 
+# Set dummy database URL so Prisma generate and Next build don't crash
+ENV DATABASE_URL="file:/app/prisma/dev.db"
+
 # Generate Prisma Client for SQLite
 RUN npx prisma generate
 
