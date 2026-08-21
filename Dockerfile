@@ -17,6 +17,9 @@ COPY . .
 # Set database URL for Prisma generate and Next.js build
 ENV DATABASE_URL="file:./dev.db"
 
+# Copy schema to a safe location (outside the volume mount at /app/prisma)
+RUN mkdir -p /app/_schema && cp prisma/schema.prisma /app/_schema/schema.prisma
+
 # Generate Prisma Client
 RUN npx prisma generate
 
