@@ -8,13 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
-    "db:generate": "prisma generate",
-    "agent": "tsx agent/adpilot-agent.ts"
+    "db:generate": "prisma generate"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.0.0",
-    "@prisma/adapter-better-sqlite3": "^6.4.1",
-    "@prisma/client": "^6.4.1",
+    "@prisma/client": "6.12.1",
     "@radix-ui/react-alert-dialog": "^1.1.0",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.0",
@@ -32,7 +30,6 @@
     "@radix-ui/react-tooltip": "^1.1.0",
     "ai": "^4.0.0",
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^13.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "date-fns": "^4.1.0",
@@ -41,7 +38,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.0",
-    "sqlite3": "^6.0.1",
     "stripe": "^22.5.0",
     "tailwind-merge": "^2.5.0",
     "tailwindcss-animate": "^1.0.7",
@@ -51,15 +47,13 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.0.0",
-    "prisma": "^6.4.1",
+    "prisma": "6.12.1",
     "tailwindcss": "^4.0.0",
-    "tsx": "^4.23.12",
     "typescript": "^5.7.0"
   }
 }

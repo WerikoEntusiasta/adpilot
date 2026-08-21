@@ -2,18 +2,11 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Install dependencies for native modules (e.g. better-sqlite3) and Prisma (openssl)
-# node-slim is Debian based, so we use apt-get instead of apk
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    libsqlite3-dev \
-    openssl \
-    && rm -rf /var/lib/apt/lists/*
+# OpenSSL is needed by Prisma query engine
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy package files (no lock file — fresh install)
+COPY package.json ./
 
 # Install dependencies
 RUN npm install
@@ -21,13 +14,13 @@ RUN npm install
 # Copy application source
 COPY . .
 
-# Set dummy database URL so Prisma generate and Next build don't crash
-ENV DATABASE_URL="file:/app/prisma/dev.db"
+# Set database URL for Prisma generate and Next.js build
+ENV DATABASE_URL="file:./dev.db"
 
-# Generate Prisma Client for SQLite
+# Generate Prisma Client
 RUN npx prisma generate
 
-# Build Next.js app
+# Build Next.js
 RUN npm run build
 
 # Expose port
@@ -36,5 +29,4 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Start production server
 CMD ["npm", "start"]
