@@ -1,12 +1,19 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
+# Install dependencies for native modules (e.g. better-sqlite3) and Prisma (openssl)
+# node-slim is Debian based, so we use apt-get instead of apk
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    libsqlite3-dev \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy package files
 COPY package.json package-lock.json* ./
-
-# Install dependencies for native modules (e.g. better-sqlite3) and Prisma (openssl)
-RUN apk add --no-cache python3 make g++ sqlite-dev openssl openssl-dev
 
 # Install dependencies
 RUN npm install
