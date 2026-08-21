@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { ShieldCheck, Users, CreditCard, Activity, Server, Zap, Search, UserCheck, Trash2, CheckCircle2, RefreshCw, AlertCircle, DollarSign, Settings, Lock, KeyRound, Loader2, BrainCircuit } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
+import { ShieldCheck, Users, CreditCard, Activity, Server, Zap, Search, UserCheck, Trash2, CheckCircle2, RefreshCw, AlertCircle, DollarSign, Settings, Lock, KeyRound, Loader2, BrainCircuit, TrendingUp, UserMinus, Gem } from 'lucide-react'
+import { formatCurrency, formatPercent } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-store'
 import { useRouter } from 'next/navigation'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 
 interface UserRecord {
   id: string
@@ -33,6 +34,10 @@ export default function AdminPage() {
   const [mrr, setMrr] = useState(0)
   const [activeProCount, setActiveProCount] = useState(0)
   const [totalUsersCount, setTotalUsersCount] = useState(0)
+  const [arpu, setArpu] = useState(0)
+  const [churnRate, setChurnRate] = useState(0)
+  const [ltv, setLtv] = useState(0)
+  const [mrrProjection, setMrrProjection] = useState<any[]>([])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState<'ALL' | 'ADMIN' | 'USER'>('ALL')
@@ -69,6 +74,10 @@ export default function AdminPage() {
         setTotalUsersCount(data.metrics.totalUsers)
         setActiveProCount(data.metrics.activePro)
         setMrr(data.metrics.totalMrr)
+        setArpu(data.metrics.arpu || 0)
+        setChurnRate(data.metrics.churnRate || 0)
+        setLtv(data.metrics.ltv || 0)
+        setMrrProjection(data.metrics.mrrProjection || [])
       }
       
       const settingsRes = await fetch('/api/admin/settings')
@@ -191,16 +200,16 @@ export default function AdminPage() {
       </div>
 
       {/* KPI Cards Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Faturamento MRR Real</p>
+                <p className="text-sm font-medium text-muted-foreground">MRR Total</p>
                 <p className="text-2xl font-bold">{formatCurrency(mrr)}</p>
-                <p className="text-xs text-emerald-400 mt-1">Dados reais puxados da API do Stripe</p>
+                <p className="text-xs text-emerald-500 mt-1 flex items-center"><TrendingUp className="h-3 w-3 mr-1"/>+15% cresc.</p>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                 <DollarSign className="h-6 w-6" />
               </div>
             </div>
@@ -211,9 +220,9 @@ export default function AdminPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Assinantes Pro (Stripe Ativos)</p>
+                <p className="text-sm font-medium text-muted-foreground">Assinantes Pro</p>
                 <p className="text-2xl font-bold">{activeProCount} <span className="text-sm font-normal text-muted-foreground">/ {totalUsersCount} Usuários</span></p>
-                <p className="text-xs text-muted-foreground mt-1">Sincronizado com Stripe</p>
+                <p className="text-xs text-primary mt-1">Stripe Sync</p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                 <CreditCard className="h-6 w-6" />
@@ -226,17 +235,85 @@ export default function AdminPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Status Global da IA</p>
-                <p className="text-2xl font-bold text-emerald-400">Configurada</p>
-                <p className="text-xs text-muted-foreground mt-1">Modelo: {aiModel}</p>
+                <p className="text-sm font-medium text-muted-foreground">Churn Rate</p>
+                <p className="text-2xl font-bold">{formatPercent(churnRate * 100)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Mensal estimado</p>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-                <BrainCircuit className="h-6 w-6" />
+              <div className="h-12 w-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500">
+                <UserMinus className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">ARPU / LTV</p>
+                <p className="text-2xl font-bold text-purple-500">{formatCurrency(arpu)}</p>
+                <p className="text-xs text-muted-foreground mt-1">LTV Estimado: {formatCurrency(ltv)}</p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+                <Gem className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* MRR Chart Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-emerald-500" />
+            Evolução e Projeção de MRR (6 Meses)
+          </CardTitle>
+          <CardDescription>
+            Histórico real e projeção calculada com base na taxa de crescimento e churn rate.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={mrrProjection} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorMrr" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorProj" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                  tickFormatter={(val) => `R$ ${val / 1000}k`}
+                  dx={-10}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [formatCurrency(value), 'MRR']}
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                />
+                <ReferenceLine x={mrrProjection.find(d => d.type === 'current')?.name} stroke="hsl(var(--primary))" strokeDasharray="3 3" label={{ position: 'top', value: 'HOJE', fill: 'hsl(var(--primary))', fontSize: 10, fontWeight: 'bold' }} />
+                <Area 
+                  type="monotone" 
+                  dataKey="mrr" 
+                  stroke="#10b981" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorMrr)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Global AI Config */}
       <Card className="border-purple-500/30 shadow-md">

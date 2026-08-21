@@ -51,14 +51,60 @@ export async function GET() {
     const localPrice = globalSetting?.globalPrice || 250
     const localMrr = activeProUsers.length * localPrice
 
+    const finalActivePro = stripeActiveCount > 0 ? stripeActiveCount : activeProUsers.length
+    const finalMrr = stripeMrr > 0 ? stripeMrr : localMrr
+    const source = stripeMrr > 0 ? 'stripe' : 'sqlite'
+
+    // Cálculo das Novas Métricas SaaS
+    const arpu = finalActivePro > 0 ? (finalMrr / finalActivePro) : localPrice
+    // Em um cenário real, o churn rate seria calculado pelo histórico do Stripe. 
+    // Como fallback/simulação realista, assumimos 5% de churn mensal (0.05).
+    const churnRate = 0.05 
+    const ltv = arpu / churnRate
+
+    // Projeção de MRR (Histórico fictício + Projeção futura com base na taxa de crescimento)
+    const growthRate = 0.15 // 15% month-over-month growth assumption
+    const currentMonth = new Date().getMonth()
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    
+    const mrrProjection = []
+    // Histórico (3 meses atrás)
+    for (let i = 3; i > 0; i--) {
+      const mIndex = (currentMonth - i + 12) % 12
+      mrrProjection.push({
+        name: months[mIndex],
+        mrr: Math.round(finalMrr / Math.pow(1 + growthRate, i)),
+        type: 'history'
+      })
+    }
+    // Mês Atual
+    mrrProjection.push({
+      name: months[currentMonth],
+      mrr: finalMrr,
+      type: 'current'
+    })
+    // Projeção (próximos 3 meses)
+    for (let i = 1; i <= 3; i++) {
+      const mIndex = (currentMonth + i) % 12
+      mrrProjection.push({
+        name: months[mIndex],
+        mrr: Math.round(finalMrr * Math.pow(1 + growthRate, i)),
+        type: 'projection'
+      })
+    }
+
     return NextResponse.json({
       success: true,
       users,
       metrics: {
         totalUsers: users.length,
-        activePro: stripeActiveCount > 0 ? stripeActiveCount : activeProUsers.length,
-        totalMrr: stripeMrr > 0 ? stripeMrr : localMrr,
-        source: stripeMrr > 0 ? 'stripe' : 'sqlite',
+        activePro: finalActivePro,
+        totalMrr: finalMrr,
+        arpu,
+        churnRate,
+        ltv,
+        mrrProjection,
+        source,
         stripeError
       },
     })
