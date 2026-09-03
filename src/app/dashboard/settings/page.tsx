@@ -360,6 +360,59 @@ function SettingsContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Privacidade & LGPD */}
+      <Card className="border-red-500/20 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-500">
+            <Shield className="h-5 w-5" />
+            Privacidade & LGPD
+          </CardTitle>
+          <CardDescription>
+            Controle total sobre seus dados pessoais de acordo com a Lei Geral de Proteção de Dados (Art. 18).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3 p-4 rounded-lg bg-muted/30 border">
+              <div>
+                <p className="font-semibold text-sm">Exportar Dados (Portabilidade)</p>
+                <p className="text-xs text-muted-foreground mt-1">Baixe uma cópia de todas as suas configurações, métricas armazenadas e log de uso da IA em formato legível (JSON).</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={async () => {
+                const res = await fetch('/api/user/lgpd/export')
+                const data = await res.json()
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                const url = window.URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'adpilot_meus_dados_lgpd.json'
+                a.click()
+              }}>
+                Baixar Meus Dados
+              </Button>
+            </div>
+
+            <div className="space-y-3 p-4 rounded-lg bg-red-500/5 border border-red-500/20">
+              <div>
+                <p className="font-semibold text-sm text-red-500">Excluir Conta Permanentemente</p>
+                <p className="text-xs text-muted-foreground mt-1">Sua assinatura será cancelada (Stripe) e todos os seus dados serão apagados definitivamente do nosso banco de dados (SQLite).</p>
+              </div>
+              <Button variant="destructive" size="sm" onClick={async () => {
+                if (confirm('Aviso Irreversível: Tem certeza que deseja apagar sua conta e todos os dados armazenados? Sua assinatura será cancelada.')) {
+                  const res = await fetch('/api/user/lgpd/delete', { method: 'POST' })
+                  if (res.ok) {
+                    alert('Conta excluída com sucesso. Você será desconectado.')
+                    window.location.href = '/'
+                  }
+                }
+              }}>
+                Excluir Minha Conta
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
