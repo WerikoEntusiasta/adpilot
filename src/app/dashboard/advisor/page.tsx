@@ -57,6 +57,7 @@ export default function AdvisorPage() {
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
           adAccountId: settings.fbAdAccountId,
+          useAdminToken: settings.useAdminFbToken,
         }),
       })
         .then((res) => res.json())

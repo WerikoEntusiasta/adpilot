@@ -9,6 +9,7 @@ interface SettingsState {
   fbAppSecret: string
   fbAccessToken: string
   fbAdAccountId: string
+  useAdminFbToken: boolean
   fbStatus: 'idle' | 'valid' | 'invalid'
 
   // AI (OpenAI / OpenCode compatible)
@@ -22,7 +23,7 @@ interface SettingsState {
   subscriptionStatus: 'active' | 'free'
 
   // Actions
-  setFbKeys: (keys: Partial<Pick<SettingsState, 'fbAppId' | 'fbAppSecret' | 'fbAccessToken' | 'fbAdAccountId'>>) => void
+  setFbKeys: (keys: Partial<Pick<SettingsState, 'fbAppId' | 'fbAppSecret' | 'fbAccessToken' | 'fbAdAccountId' | 'useAdminFbToken'>>) => void
   setFbStatus: (status: 'idle' | 'valid' | 'invalid') => void
   setAiConfig: (config: Partial<Pick<SettingsState, 'aiEndpoint' | 'aiApiKey' | 'aiModel'>>) => void
   setStripeKey: (key: string) => void
@@ -38,6 +39,7 @@ export const useSettings = create<SettingsState>()(
       fbAppSecret: '',
       fbAccessToken: '',
       fbAdAccountId: '',
+      useAdminFbToken: false,
       fbStatus: 'idle',
 
       aiEndpoint: 'https://api.openai.com/v1',
@@ -56,6 +58,7 @@ export const useSettings = create<SettingsState>()(
 
       hasFbKeys: () => {
         const s = get()
+        if (s.useAdminFbToken && s.fbAdAccountId) return true
         return !!(s.fbAccessToken && s.fbAdAccountId)
       },
       hasAiKeys: () => {

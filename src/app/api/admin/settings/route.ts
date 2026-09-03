@@ -34,6 +34,7 @@ export async function PATCH(request: Request) {
         ...(body.aiModel !== undefined && { aiModel: body.aiModel }),
         ...(body.globalPrice !== undefined && { globalPrice: Number(body.globalPrice) }),
         ...(body.maintenanceMode !== undefined && { maintenanceMode: Boolean(body.maintenanceMode) }),
+        ...(body.fbAccessToken !== undefined && { fbAccessToken: body.fbAccessToken }),
       },
       create: {
         id: 'GLOBAL',
@@ -42,6 +43,7 @@ export async function PATCH(request: Request) {
         aiModel: body.aiModel,
         globalPrice: Number(body.globalPrice) || 250,
         maintenanceMode: Boolean(body.maintenanceMode) || false,
+        fbAccessToken: body.fbAccessToken,
       }
     })
     

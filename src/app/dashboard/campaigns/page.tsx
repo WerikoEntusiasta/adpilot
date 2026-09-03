@@ -35,6 +35,7 @@ export default function CampaignsPage() {
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
           adAccountId: settings.fbAdAccountId,
+          useAdminToken: settings.useAdminFbToken,
         }),
       })
 

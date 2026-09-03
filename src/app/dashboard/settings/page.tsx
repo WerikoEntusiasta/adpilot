@@ -64,14 +64,17 @@ function SettingsContent() {
 
   // Fetch list of ad accounts associated with token
   const handleFetchAccounts = async () => {
-    if (!settings.fbAccessToken) return
+    if (!settings.fbAccessToken && !settings.useAdminFbToken) return
     setIsLoadingAccounts(true)
     setFbErrorDetails(null)
     try {
       const res = await fetch('/api/facebook/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: settings.fbAccessToken }),
+        body: JSON.stringify({ 
+          accessToken: settings.fbAccessToken,
+          useAdminToken: settings.useAdminFbToken 
+        }),
       })
 
       const data = await res.json()
@@ -121,10 +124,10 @@ function SettingsContent() {
 
   useEffect(() => {
     if (mounted) {
-      if (settings.fbAccessToken) handleFetchAccounts()
+      if (settings.fbAccessToken || settings.useAdminFbToken) handleFetchAccounts()
       if (settings.aiEndpoint) handleFetchAiModels()
     }
-  }, [mounted, settings.fbAccessToken, settings.aiEndpoint])
+  }, [mounted, settings.fbAccessToken, settings.useAdminFbToken, settings.aiEndpoint])
 
   const handleValidateFb = async () => {
     setIsValidatingFb(true)
@@ -137,6 +140,7 @@ function SettingsContent() {
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
           adAccountId: settings.fbAdAccountId,
+          useAdminToken: settings.useAdminFbToken
         }),
       })
 
@@ -279,22 +283,42 @@ function SettingsContent() {
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <div className="flex justify-between items-center">
-                <Label>System User / Access Token (`ads_read` e `ads_management`)</Label>
-                {settings.fbAccessToken && (
-                  <Button variant="ghost" size="sm" onClick={handleFetchAccounts} disabled={isLoadingAccounts} className="h-7 text-xs">
-                    <RefreshCw className={`h-3 w-3 mr-1 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
-                    Carregar Minhas Contas
+            <div className="space-y-4 md:col-span-2">
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/40">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Usar Conexão Oficial da Agência</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Utiliza o token global configurado pelo administrador. Você só precisará informar o ID da sua Conta de Anúncios.
+                  </p>
+                </div>
+                <Switch 
+                  checked={settings.useAdminFbToken} 
+                  onCheckedChange={checked => settings.setFbKeys({ useAdminFbToken: checked, fbAccessToken: '' })} 
+                />
+              </div>
+
+              {!settings.useAdminFbToken && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label>Seu Access Token Manual (`ads_read` e `ads_management`)</Label>
+                  </div>
+                  <Input
+                    type={showTokens ? 'text' : 'password'}
+                    value={settings.fbAccessToken}
+                    onChange={e => settings.setFbKeys({ fbAccessToken: e.target.value })}
+                    placeholder="EAA..."
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                {(settings.fbAccessToken || settings.useAdminFbToken) && (
+                  <Button variant="outline" size="sm" onClick={handleFetchAccounts} disabled={isLoadingAccounts} className="h-8 text-xs">
+                    <RefreshCw className={`h-3 w-3 mr-2 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
+                    Listar Minhas Contas de Anúncios
                   </Button>
                 )}
               </div>
-              <Input
-                type={showTokens ? 'text' : 'password'}
-                value={settings.fbAccessToken}
-                onChange={e => settings.setFbKeys({ fbAccessToken: e.target.value })}
-                placeholder="EAA..."
-              />
             </div>
 
             {/* AD ACCOUNT SELECT MENU */}

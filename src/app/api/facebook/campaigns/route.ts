@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import {
   getCampaigns,
   getCampaignInsights,
@@ -14,7 +15,17 @@ import {
 
 export async function POST(request: Request) {
   try {
-    const { accessToken, adAccountId, datePreset } = await request.json()
+    const { accessToken: clientToken, adAccountId, useAdminToken, datePreset } = await request.json()
+
+    let accessToken = clientToken
+
+    if (useAdminToken) {
+      const global = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
+      if (!global || !global.fbAccessToken) {
+        return NextResponse.json({ error: 'O Administrador ainda não configurou um Token Global da Agência.' }, { status: 400 })
+      }
+      accessToken = global.fbAccessToken
+    }
 
     if (!accessToken || !adAccountId) {
       return NextResponse.json({ error: 'Credenciais não configuradas' }, { status: 400 })

@@ -1,11 +1,22 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
-    const { accessToken } = await request.json()
+    const { accessToken: clientToken, useAdminToken } = await request.json()
+
+    let accessToken = clientToken
+
+    if (useAdminToken) {
+      const global = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
+      if (!global || !global.fbAccessToken) {
+        return NextResponse.json({ error: 'O Administrador ainda não configurou um Token Global da Agência.' }, { status: 400 })
+      }
+      accessToken = global.fbAccessToken
+    }
 
     if (!accessToken) {
-      return NextResponse.json({ error: 'Access Token é obrigatório' }, { status: 400 })
+      return NextResponse.json({ error: 'Nenhum Access Token fornecido' }, { status: 400 })
     }
 
     const url = new URL('https://graph.facebook.com/v21.0/me/adaccounts')

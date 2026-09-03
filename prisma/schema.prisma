@@ -41,6 +41,7 @@ model GlobalSetting {
   aiModel         String?  @default("opencode-zen")
   globalPrice     Int      @default(250)
   maintenanceMode Boolean  @default(false)
+  fbAccessToken   String?
   updatedAt       DateTime @updatedAt
 }
 

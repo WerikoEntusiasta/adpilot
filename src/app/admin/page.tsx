@@ -49,6 +49,7 @@ export default function AdminPage() {
   const [aiEndpoint, setAiEndpoint] = useState('https://api.openai.com/v1')
   const [aiApiKey, setAiApiKey] = useState('')
   const [aiModel, setAiModel] = useState('opencode-zen')
+  const [fbAccessToken, setFbAccessToken] = useState('')
   const [savedSettings, setSavedSettings] = useState(false)
 
   useEffect(() => {
@@ -83,11 +84,12 @@ export default function AdminPage() {
       const settingsRes = await fetch('/api/admin/settings')
       const settingsData = await settingsRes.json()
       if (settingsRes.ok && settingsData.settings) {
-        setMaintenanceMode(settingsData.settings.maintenanceMode)
-        setGlobalPrice(settingsData.settings.globalPrice)
         setAiEndpoint(settingsData.settings.aiEndpoint || 'https://api.openai.com/v1')
         setAiApiKey(settingsData.settings.aiApiKey || '')
         setAiModel(settingsData.settings.aiModel || 'opencode-zen')
+        setGlobalPrice(settingsData.settings.globalPrice || 250)
+        setMaintenanceMode(settingsData.settings.maintenanceMode || false)
+        setFbAccessToken(settingsData.settings.fbAccessToken || '')
       }
     } catch (err) {
       console.error('Erro ao buscar dados:', err)
@@ -111,7 +113,8 @@ export default function AdminPage() {
           globalPrice,
           aiEndpoint,
           aiApiKey,
-          aiModel
+          aiModel,
+          fbAccessToken
         }),
       })
       if (res.ok) {
@@ -362,7 +365,7 @@ export default function AdminPage() {
           
           <div className="flex justify-end pt-2">
             <Button onClick={saveGlobalSettings}>
-              {savedSettings ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Salvo!</> : 'Salvar Configuração de IA'}
+              {savedSettings ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Salvo!</> : 'Salvar Configurações Globais'}
             </Button>
           </div>
         </CardContent>
@@ -402,6 +405,21 @@ export default function AdminPage() {
                 <Switch checked={maintenanceMode} onCheckedChange={setMaintenanceMode} />
                 <span className="text-xs font-semibold">{maintenanceMode ? 'ATIVADO' : 'DESATIVADO'}</span>
               </div>
+            </div>
+
+            <div className="space-y-2 p-4 rounded-lg bg-muted/50 border md:col-span-2">
+              <Label className="font-semibold text-blue-500 flex items-center gap-2">
+                Token Oficial do Facebook (Global / Agência)
+              </Label>
+              <Input
+                type="password"
+                value={fbAccessToken}
+                onChange={e => setFbAccessToken(e.target.value)}
+                placeholder="EAA... (Token do System User da Agência)"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Se configurado, os usuários poderão optar por usar esta conexão em vez de terem que gerar seus próprios tokens.
+              </p>
             </div>
           </div>
 

@@ -267,9 +267,34 @@ export default function AuthPage() {
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-xs flex items-center justify-between">
-                      <span className="font-semibold text-primary">Assinatura AdPilot Pro:</span>
-                      <span className="font-mono font-bold">R$ 250,00 / mês</span>
+                    <div className="space-y-3 pt-2">
+                      <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-xs flex items-center justify-between">
+                        <span className="font-semibold text-primary">Assinatura AdPilot Pro:</span>
+                        <span className="font-mono font-bold">R$ 250,00 / mês</span>
+                      </div>
+
+                      <div className="bg-muted/50 p-4 rounded-lg border text-[11px] text-muted-foreground h-32 overflow-y-auto mb-2">
+                        <strong className="block mb-2 text-foreground">Limitações de Responsabilidade e Avisos Importantes (Disclaimer)</strong>
+                        <p className="mb-2">Para garantir a transparência no uso da plataforma, destacamos que o AdPilot é uma ferramenta de software as a service (SaaS) "as is" (no estado em que se encontra) e não atua como agência de marketing ou consultor financeiro.</p>
+                        <ul className="list-disc pl-4 space-y-1">
+                          <li><strong>Os Resultados Não São Garantidos:</strong> A performance de campanhas de tráfego pago depende de inúmeras variáveis de mercado externas. O AdPilot não garante conversões, alcance mínimo, faturamento (ROAS) ou qualquer tipo de retorno financeiro (ROI).</li>
+                          <li><strong>Revisão Humana Obrigatória:</strong> A inteligência artificial pode gerar informações imprecisas. É responsabilidade única e exclusiva do usuário final (gestor) revisar minuciosamente orçamentos, públicos e textos antes de aprovar e veicular qualquer anúncio gastando dinheiro real.</li>
+                          <li><strong>Integração de Terceiros (APIs):</strong> Mudanças, bugs ou revogações de tokens do Meta/Facebook, OpenAI e Stripe estão fora do nosso controle e eximem o sistema de responsabilidades por interrupções temporárias de serviço.</li>
+                          <li><strong>Alocação de Orçamento:</strong> O usuário é o único responsável pelos orçamentos financeiros vinculados ao seu Cartão de Crédito/Conta de Anúncios.</li>
+                        </ul>
+                      </div>
+
+                      <div className="flex items-start space-x-2">
+                        <input 
+                          type="checkbox" 
+                          id="terms" 
+                          required 
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="terms" className="text-xs font-normal leading-tight cursor-pointer">
+                          Eu li, compreendi e concordo juridicamente com os Termos de Uso e Limitações de Responsabilidade acima. Estou ciente de que a plataforma atua como ferramenta-meio.
+                        </Label>
+                      </div>
                     </div>
 
                     <Button
