@@ -19,6 +19,8 @@ interface UserRecord {
   email: string
   role: 'ADMIN' | 'USER' | string
   subscriptionStatus: 'ACTIVE_PRO' | 'FREE_DEMO' | string
+  lgpdConsent: boolean
+  lgpdConsentDate: string
   createdAt: string
   updatedAt: string
 }
