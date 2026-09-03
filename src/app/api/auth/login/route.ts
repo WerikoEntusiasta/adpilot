@@ -58,10 +58,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'E-mail ou senha incorretos' }, { status: 401 })
     }
 
-    // Para usuários normais com senha hashada real (ignoramos bcrypt para o demo)
-    // const isMatch = await bcrypt.compare(password, dbUser.password)
-    // Por ser protótipo, comparamos as senhas em plain text se não for hash
-    const isMatch = password === dbUser.password
+    // Para usuários normais, compara a senha usando bcrypt (LGPD Art. 46 Segurança)
+    // Suporte legado para plain text caso o usuário tenha sido criado antes do bcrypt
+    let isMatch = false
+    if (dbUser.password.startsWith('$2a$') || dbUser.password.startsWith('$2b$')) {
+      isMatch = await bcrypt.compare(password, dbUser.password)
+    } else {
+      isMatch = password === dbUser.password
+    }
 
     if (!isMatch) {
       return NextResponse.json({ error: 'E-mail ou senha incorretos' }, { status: 401 })

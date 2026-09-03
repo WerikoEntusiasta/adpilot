@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
@@ -20,13 +21,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'E-mail já está em uso' }, { status: 400 })
     }
 
-    // Hash password properly in real env, using plain text for now for compatibility with local db if needed,
-    // though bcrypt is better. We'll just save it as is since it's a prototype/demo.
+    // Hash password properly for LGPD compliance (Art. 46)
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
+
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
         email: emailClean,
-        password: password,
+        password: hashedPassword,
         role: 'USER',
         subscriptionStatus: 'FREE_DEMO',
         settings: {
