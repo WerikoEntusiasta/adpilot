@@ -37,12 +37,21 @@ export async function POST(request: Request) {
 
     const token = `token_${Date.now()}_${Math.random().toString(36).substring(2)}`
 
+    // Get IP and User-Agent
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'IP Desconhecido'
+    const userAgent = request.headers.get('user-agent') || 'Desconhecido'
+
     // Log registration
     await prisma.auditLog.create({
       data: {
         userId: newUser.id,
-        action: 'USER_REGISTER',
-        details: JSON.stringify({ source: 'credentials' })
+        action: 'USER_REGISTER_TERMS_ACCEPTED',
+        ipAddress,
+        userAgent,
+        details: JSON.stringify({ 
+          agreedTo: 'Termos de Uso e Isenção de Responsabilidade',
+          timestamp: new Date().toISOString()
+        })
       }
     })
 

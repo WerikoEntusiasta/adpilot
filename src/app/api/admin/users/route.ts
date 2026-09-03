@@ -12,6 +12,8 @@ export async function GET() {
         email: true,
         role: true,
         subscriptionStatus: true,
+        lgpdConsent: true,
+        lgpdConsentDate: true,
         createdAt: true,
         updatedAt: true,
       },

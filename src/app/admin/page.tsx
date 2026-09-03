@@ -467,6 +467,7 @@ export default function AdminPage() {
                     <th className="pb-3 pr-4 font-medium">Usuário</th>
                     <th className="pb-3 pr-4 font-medium">Função</th>
                     <th className="pb-3 pr-4 font-medium">Plano Stripe</th>
+                    <th className="pb-3 pr-4 font-medium">Termos & LGPD</th>
                     <th className="pb-3 pr-4 font-medium">Data Cadastro</th>
                     <th className="pb-3 font-medium text-right">Ações no SQLite</th>
                   </tr>
@@ -481,17 +482,25 @@ export default function AdminPage() {
                         </div>
                       </td>
                       <td className="py-3 pr-4">
-                        {u.role === 'ADMIN' ? (
-                          <Badge variant="default" className="bg-purple-600 gap-1"><ShieldCheck className="h-3 w-3" /> Admin</Badge>
-                        ) : (
-                          <Badge variant="outline">Cliente</Badge>
-                        )}
+                        <Badge variant={u.role === 'ADMIN' ? 'default' : 'outline'} className="text-[10px] h-5">
+                          {u.role}
+                        </Badge>
                       </td>
                       <td className="py-3 pr-4">
                         {u.subscriptionStatus === 'ACTIVE_PRO' ? (
-                          <Badge variant="success" className="gap-1"><CheckCircle2 className="h-3 w-3" /> Pro (R$ 250/mês)</Badge>
+                          <Badge variant="success" className="text-[10px] h-5"><CheckCircle2 className="h-3 w-3 mr-1" /> PRO</Badge>
                         ) : (
-                          <Badge variant="secondary">Demo Grátis</Badge>
+                          <Badge variant="secondary" className="text-[10px] h-5">Free Demo</Badge>
+                        )}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {u.lgpdConsent ? (
+                          <div className="flex items-center gap-1 text-emerald-500 text-xs">
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span>Aceito</span>
+                          </div>
+                        ) : (
+                          <Badge variant="destructive" className="text-[10px] h-5">Pendente</Badge>
                         )}
                       </td>
                       <td className="py-3 pr-4 text-xs text-muted-foreground">
