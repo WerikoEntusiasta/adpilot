@@ -143,9 +143,6 @@ export default function AdminPage() {
         body: JSON.stringify({
           maintenanceMode,
           globalPrice,
-          aiEndpoint,
-          aiApiKey,
-          aiModel,
           fbAccessToken
         })
       })
@@ -443,58 +440,7 @@ export default function AdminPage() {
         </CardContent>
       </Card>
 
-      {/* Global AI Config */}
-      <Card className="border-purple-500/30 shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BrainCircuit className="h-5 w-5 text-purple-500" />
-            Configuração Global da Inteligência Artificial
-          </CardTitle>
-          <CardDescription>
-            Estas configurações afetam TODOS os usuários da plataforma. As credenciais ficam ocultas dos usuários.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="font-semibold">Endpoint Base da API de IA</Label>
-              <Input
-                value={aiEndpoint}
-                onChange={e => setAiEndpoint(e.target.value)}
-                placeholder="https://api.openai.com/v1"
-              />
-              <p className="text-xs text-muted-foreground">URL base do serviço (ex: OpenAI, OpenCode, Llama).</p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="font-semibold">Modelo de IA (ex: opencode-zen, gpt-4o)</Label>
-              <Input
-                value={aiModel}
-                onChange={e => setAiModel(e.target.value)}
-                placeholder="opencode-zen"
-              />
-              <p className="text-xs text-muted-foreground">Modelo que será utilizado para geração de copys e campanhas.</p>
-            </div>
-            
-            <div className="space-y-2 md:col-span-2">
-              <Label className="font-semibold">Chave de API (Secret Key)</Label>
-              <Input
-                type="password"
-                value={aiApiKey}
-                onChange={e => setAiApiKey(e.target.value)}
-                placeholder="sk-..."
-              />
-              <p className="text-xs text-muted-foreground">Chave de autenticação da IA.</p>
-            </div>
-          </div>
-          
-          <div className="flex justify-end pt-2">
-            <Button onClick={saveGlobalSettings}>
-              {savedSettings ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Salvo!</> : 'Salvar Configurações Globais'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Global SaaS System Settings & Maintenance */}
       <Card>
