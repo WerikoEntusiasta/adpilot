@@ -140,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Main content */}
+        {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-3">
@@ -162,7 +162,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 relative">
+          {auth.user?.lgpdConsent === false && (
+            <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-card border shadow-2xl rounded-xl p-6 max-w-2xl w-full">
+                <h2 className="text-xl font-bold mb-4">Termos de Uso e Responsabilidade</h2>
+                <div className="bg-muted/50 p-4 rounded-lg border text-sm text-muted-foreground h-64 overflow-y-auto mb-6">
+                  <strong className="block mb-2 text-foreground">Limitações de Responsabilidade e Avisos Importantes (Disclaimer)</strong>
+                  <p className="mb-2">Para garantir a transparência no uso da plataforma, destacamos que o AdPilot é uma ferramenta de software as a service (SaaS) "as is" (no estado em que se encontra) e não atua como agência de marketing ou consultor financeiro.</p>
+                  <ul className="list-disc pl-4 space-y-2">
+                    <li><strong>Os Resultados Não São Garantidos:</strong> A performance de campanhas de tráfego pago depende de inúmeras variáveis de mercado externas. O AdPilot não garante conversões, alcance mínimo, faturamento (ROAS) ou qualquer tipo de retorno financeiro (ROI).</li>
+                    <li><strong>Revisão Humana Obrigatória:</strong> A inteligência artificial pode gerar informações imprecisas. É responsabilidade única e exclusiva do usuário final (gestor) revisar minuciosamente orçamentos, públicos e textos antes de aprovar e veicular qualquer anúncio gastando dinheiro real.</li>
+                    <li><strong>Integração de Terceiros (APIs):</strong> Mudanças, bugs ou revogações de tokens do Meta/Facebook, OpenAI e Stripe estão fora do nosso controle e eximem o sistema de responsabilidades por interrupções temporárias de serviço.</li>
+                    <li><strong>Alocação de Orçamento:</strong> O usuário é o único responsável pelos orçamentos financeiros vinculados ao seu Cartão de Crédito/Conta de Anúncios.</li>
+                  </ul>
+                  <p className="mt-4">A plataforma AdPilot é um facilitador de processos (ferramenta-meio), não uma garantidora de lucros (ferramenta-fim).</p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <p className="text-xs text-muted-foreground max-w-xs">Você deve aceitar os termos para continuar utilizando a plataforma.</p>
+                  <Button 
+                    onClick={async () => {
+                      const res = await fetch('/api/user/lgpd/accept', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: auth.user!.id })
+                      });
+                      if (res.ok) {
+                        auth.setAuth({ ...auth.user!, lgpdConsent: true }, auth.token!);
+                      }
+                    }}
+                    className="w-full sm:w-auto bg-primary text-white"
+                  >
+                    Eu li e Concordo
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {children}
         </main>
       </div>

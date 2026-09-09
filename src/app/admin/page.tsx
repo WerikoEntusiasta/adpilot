@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { ShieldCheck, Users, CreditCard, Activity, Server, Zap, Search, UserCheck, Trash2, CheckCircle2, RefreshCw, AlertCircle, DollarSign, Settings, Lock, KeyRound, Loader2, BrainCircuit, TrendingUp, UserMinus, Gem } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { ShieldCheck, Users, CreditCard, Activity, Server, Zap, Search, UserCheck, Trash2, CheckCircle2, RefreshCw, AlertCircle, DollarSign, Settings, Lock, KeyRound, Loader2, BrainCircuit, TrendingUp, UserMinus, Gem, UserPlus } from 'lucide-react'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-store'
 import { useRouter } from 'next/navigation'
@@ -52,7 +53,17 @@ export default function AdminPage() {
   const [aiApiKey, setAiApiKey] = useState('')
   const [aiModel, setAiModel] = useState('opencode-zen')
   const [fbAccessToken, setFbAccessToken] = useState('')
+  const [isUpdatingDbUrl, setIsUpdatingDbUrl] = useState(false)
   const [savedSettings, setSavedSettings] = useState(false)
+
+  // Create User State
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false)
+  const [newUserName, setNewUserName] = useState('')
+  const [newUserEmail, setNewUserEmail] = useState('')
+  const [newUserPassword, setNewUserPassword] = useState('')
+  const [newUserStatus, setNewUserStatus] = useState<'ACTIVE_PRO' | 'FREE_DEMO'>('ACTIVE_PRO')
+  const [isCreatingUser, setIsCreatingUser] = useState(false)
+  const [createUserError, setCreateUserError] = useState<string | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -106,9 +117,10 @@ export default function AdminPage() {
   }, [mounted, user])
 
   const saveGlobalSettings = async () => {
+    setIsUpdatingDbUrl(true)
     try {
       const res = await fetch('/api/admin/settings', {
-        method: 'PATCH',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           maintenanceMode,
@@ -117,14 +129,58 @@ export default function AdminPage() {
           aiApiKey,
           aiModel,
           fbAccessToken
-        }),
+        })
       })
       if (res.ok) {
         setSavedSettings(true)
-        setTimeout(() => setSavedSettings(false), 2000)
+        setTimeout(() => setSavedSettings(false), 3000)
       }
-    } catch (err) {
-      console.error('Erro ao salvar settings:', err)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsUpdatingDbUrl(false)
+    }
+  }
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsCreatingUser(true)
+    setCreateUserError(null)
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newUserName,
+          email: newUserEmail,
+          password: newUserPassword,
+          subscriptionStatus: newUserStatus,
+          role: 'USER'
+        })
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        setCreateUserError(data.error || 'Erro ao criar usuário')
+        setIsCreatingUser(false)
+        return
+      }
+
+      // Success
+      setIsCreateUserModalOpen(false)
+      setNewUserName('')
+      setNewUserEmail('')
+      setNewUserPassword('')
+      setNewUserStatus('ACTIVE_PRO')
+      setIsCreatingUser(false)
+      
+      // Refresh user list
+      fetchRealData()
+    } catch (error) {
+      setCreateUserError('Erro de conexão')
+      setIsCreatingUser(false)
     }
   }
 
@@ -453,6 +509,76 @@ export default function AdminPage() {
                   className="pl-9 w-64 h-9"
                 />
               </div>
+
+              <Dialog open={isCreateUserModalOpen} onOpenChange={setIsCreateUserModalOpen}>
+                <Button size="sm" onClick={() => setIsCreateUserModalOpen(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <UserPlus className="h-4 w-4" /> Novo Usuário
+                </Button>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Criar Novo Usuário</DialogTitle>
+                    <DialogDescription>
+                      Crie uma conta para um cliente que realizou o pagamento via PIX ou sistema externo.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
+                    {createUserError && (
+                      <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" /> {createUserError}
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="new-name">Nome Completo</Label>
+                      <Input 
+                        id="new-name" 
+                        value={newUserName} 
+                        onChange={e => setNewUserName(e.target.value)} 
+                        required 
+                        placeholder="Nome do Cliente"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-email">E-mail</Label>
+                      <Input 
+                        id="new-email" 
+                        type="email" 
+                        value={newUserEmail} 
+                        onChange={e => setNewUserEmail(e.target.value)} 
+                        required 
+                        placeholder="email@cliente.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">Senha Provisória</Label>
+                      <Input 
+                        id="new-password" 
+                        type="password" 
+                        value={newUserPassword} 
+                        onChange={e => setNewUserPassword(e.target.value)} 
+                        required 
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-plan">Plano de Acesso</Label>
+                      <select 
+                        id="new-plan"
+                        value={newUserStatus}
+                        onChange={(e) => setNewUserStatus(e.target.value as 'ACTIVE_PRO' | 'FREE_DEMO')}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                      >
+                        <option value="ACTIVE_PRO">Plano PRO (Liberado)</option>
+                        <option value="FREE_DEMO">Plano Grátis (Demo)</option>
+                      </select>
+                    </div>
+                    <DialogFooter className="pt-4">
+                      <Button type="submit" disabled={isCreatingUser} className="w-full">
+                        {isCreatingUser ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...</> : 'Criar Conta'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardHeader>

@@ -115,3 +115,68 @@ export async function GET() {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
+
+import bcrypt from 'bcryptjs'
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { name, email, password, subscriptionStatus, role } = body
+
+    if (!name || !email || !password) {
+      return NextResponse.json({ error: 'Nome, E-mail e Senha são obrigatórios' }, { status: 400 })
+    }
+
+    const emailClean = email.trim().toLowerCase()
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: emailClean }
+    })
+
+    if (existingUser) {
+      return NextResponse.json({ error: 'Este e-mail já está em uso' }, { status: 400 })
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
+
+    const newUser = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email: emailClean,
+        password: hashedPassword,
+        role: role || 'USER',
+        subscriptionStatus: subscriptionStatus || 'ACTIVE_PRO',
+        lgpdConsent: false, // Força o aceite na primeira vez que o cliente logar
+        settings: {
+          create: {}
+        }
+      }
+    })
+
+    // Log admin action
+    await prisma.auditLog.create({
+      data: {
+        userId: newUser.id,
+        action: 'ADMIN_CREATED_USER',
+        details: JSON.stringify({ source: 'admin_panel' })
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        subscriptionStatus: newUser.subscriptionStatus
+      }
+    })
+  } catch (error) {
+    console.error('Error creating user via admin:', error)
+    return NextResponse.json({ error: 'Erro ao criar usuário' }, { status: 500 })
+  }
+}
