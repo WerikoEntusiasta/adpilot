@@ -18,6 +18,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-store'
+import { useSettings } from '@/lib/store'
 
 const navItems = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
@@ -34,6 +35,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+  const settings = useSettings()
+
   useEffect(() => {
     setMounted(true)
     if (mounted) {
@@ -41,9 +44,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.push('/')
       } else if (auth.user?.role === 'ADMIN') {
         router.push('/admin')
+      } else {
+        // Sync public env variables (like if AI is configured)
+        fetch('/api/app-config')
+          .then(r => r.json())
+          .then(data => {
+            if (data.envAiConfigured !== undefined) {
+              settings.setAiConfig({ envAiConfigured: data.envAiConfigured })
+            }
+          })
+          .catch(console.error)
       }
     }
-  }, [mounted, auth.isAuthenticated, auth.user, router])
+  }, [mounted, auth.isAuthenticated, auth.user, router, settings])
 
   const handleLogout = () => {
     auth.logout()

@@ -410,12 +410,12 @@ export default function AdminPage() {
                     <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} dy={10} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888888' }} dy={10} />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} 
+                  tick={{ fontSize: 12, fill: '#888888' }} 
                   tickFormatter={(value) => `R$ ${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`}
                   dx={-10}
                 />

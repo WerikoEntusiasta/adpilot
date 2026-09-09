@@ -16,6 +16,7 @@ interface SettingsState {
   aiEndpoint: string
   aiApiKey: string
   aiModel: string
+  envAiConfigured: boolean
 
   // Stripe & Billing (R$ 250,00/mês)
   stripeSecretKey: string
@@ -45,6 +46,7 @@ export const useSettings = create<SettingsState>()(
       aiEndpoint: 'https://api.openai.com/v1',
       aiApiKey: '',
       aiModel: 'opencode-zen',
+      envAiConfigured: false,
 
       stripeSecretKey: '',
       isPro: false,
@@ -63,7 +65,7 @@ export const useSettings = create<SettingsState>()(
       },
       hasAiKeys: () => {
         const s = get()
-        return !!(s.aiApiKey || (s.aiEndpoint && s.aiEndpoint !== 'https://api.openai.com/v1'))
+        return !!(s.envAiConfigured || s.aiApiKey || (s.aiEndpoint && s.aiEndpoint !== 'https://api.openai.com/v1'))
       },
     }),
     { name: 'adpilot-settings' }

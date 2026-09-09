@@ -14,8 +14,11 @@ export async function GET() {
         }
       })
     }
-    
-    return NextResponse.json({ success: true, settings: globalSetting })
+    return NextResponse.json({ 
+      success: true, 
+      settings: globalSetting,
+      envAiConfigured: !!process.env.OPENAI_API_KEY
+    })
   } catch (error) {
     console.error('API Error:', error)
     return NextResponse.json({ error: 'Erro ao buscar configurações globais' }, { status: 500 })

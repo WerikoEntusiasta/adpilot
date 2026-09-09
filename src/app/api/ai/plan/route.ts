@@ -1,22 +1,32 @@
 import { NextResponse } from 'next/server'
 import { getChatCompletionsUrl, getAiAuthHeaders } from '@/lib/ai-helpers'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
     const { briefing, endpoint, apiKey, model } = await request.json()
 
-    if (!endpoint && !apiKey) {
-      return NextResponse.json({ error: 'IA não configurada. Vá em Configurações.' }, { status: 400 })
+    let dbSettings = null
+    if (!endpoint && !apiKey && !process.env.OPENAI_API_KEY) {
+      dbSettings = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
     }
 
-    const url = getChatCompletionsUrl(endpoint || 'https://api.openai.com/v1')
-    const headers = getAiAuthHeaders(apiKey)
+    const finalEndpoint = endpoint || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || dbSettings?.aiEndpoint || 'https://api.openai.com/v1'
+    const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? (process.env.OPENAI_API_KEY || dbSettings?.aiApiKey) : apiKey
+    const finalModel = model || process.env.OPENAI_MODEL || dbSettings?.aiModel || 'gpt-4o' // Default to typical OpenAI or any user preferred model
+
+    if (!finalApiKey) {
+      return NextResponse.json({ error: 'IA não configurada. Configure no painel ou via variável de ambiente OPENAI_API_KEY.' }, { status: 400 })
+    }
+
+    const url = getChatCompletionsUrl(finalEndpoint)
+    const headers = getAiAuthHeaders(finalApiKey)
 
     const res = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: model || 'opencode-zen',
+        model: finalModel,
         messages: [
           {
             role: 'system',

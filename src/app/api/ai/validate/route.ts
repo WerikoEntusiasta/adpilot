@@ -5,18 +5,22 @@ export async function POST(request: Request) {
   try {
     const { endpoint, apiKey, model } = await request.json()
 
-    if (!endpoint) {
-      return NextResponse.json({ valid: false, error: 'Endpoint da IA não configurado' }, { status: 400 })
+    const finalEndpoint = endpoint || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+    const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? process.env.OPENAI_API_KEY : apiKey
+    const finalModel = model || process.env.OPENAI_MODEL || 'gpt-4o'
+
+    if (!finalApiKey) {
+      return NextResponse.json({ valid: false, error: 'IA não configurada via painel ou .env' }, { status: 400 })
     }
 
-    const url = getChatCompletionsUrl(endpoint)
-    const headers = getAiAuthHeaders(apiKey)
+    const url = getChatCompletionsUrl(finalEndpoint)
+    const headers = getAiAuthHeaders(finalApiKey)
 
     const res = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        model: model || 'opencode-zen',
+        model: finalModel,
         messages: [{ role: 'user', content: 'Diga OK' }],
       }),
     })
