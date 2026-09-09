@@ -138,7 +138,7 @@ export default function AdminPage() {
     setIsUpdatingDbUrl(true)
     try {
       const res = await fetch('/api/admin/settings', {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           maintenanceMode,
