@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server'
 import { getChatCompletionsUrl, getAiAuthHeaders } from '@/lib/ai-helpers'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
     const { endpoint, apiKey, model } = await request.json()
 
-    const finalEndpoint = endpoint || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? process.env.OPENAI_API_KEY : apiKey
-    const finalModel = model || process.env.OPENAI_MODEL || 'gpt-4o'
+    let dbSettings = null
+    if (!apiKey || apiKey === 'ENV_CONFIGURED' || !endpoint) {
+      dbSettings = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
+    }
+
+    const finalEndpoint = endpoint || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || dbSettings?.aiEndpoint || 'https://api.openai.com/v1'
+    const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? (process.env.OPENAI_API_KEY || dbSettings?.aiApiKey) : apiKey
+    const finalModel = model || process.env.OPENAI_MODEL || dbSettings?.aiModel || 'gpt-4o'
 
     if (!finalApiKey) {
       return NextResponse.json({ valid: false, error: 'IA não configurada via painel ou .env' }, { status: 400 })

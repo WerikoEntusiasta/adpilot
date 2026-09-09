@@ -16,6 +16,7 @@ import {
   X,
   Rocket,
   LogOut,
+  LifeBuoy
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-store'
 import { useSettings } from '@/lib/store'
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/dashboard/campaigns', label: 'Campanhas', icon: Megaphone },
   { href: '/dashboard/advisor', label: 'IA Advisor', icon: Brain },
   { href: '/dashboard/planner', label: 'Planejador', icon: CalendarPlus },
+  { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy },
   { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
 ]
 

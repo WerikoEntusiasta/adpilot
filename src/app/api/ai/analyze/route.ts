@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const { campaigns, endpoint, apiKey, model } = await request.json()
 
     let dbSettings = null
-    if (!endpoint && !apiKey && !process.env.OPENAI_API_KEY) {
+    if (!apiKey || apiKey === 'ENV_CONFIGURED' || !endpoint) {
       dbSettings = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
     }
 

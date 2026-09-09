@@ -53,7 +53,8 @@ export async function GET() {
     }
 
     // Fallback para cálculo local se o Stripe falhar ou não estiver configurado corretamente
-    const activeProUsers = users.filter((u) => u.subscriptionStatus === 'ACTIVE_PRO')
+    // Não conta o ADMIN como assinante
+    const activeProUsers = users.filter((u) => u.subscriptionStatus === 'ACTIVE_PRO' && u.role !== 'ADMIN')
     
     // Obtendo Global Price caso o MRR do stripe não funcione
     const globalSetting = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' }})
