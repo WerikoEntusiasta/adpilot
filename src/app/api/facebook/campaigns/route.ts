@@ -25,6 +25,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'O Administrador ainda não configurou um Token Global da Agência.' }, { status: 400 })
       }
       accessToken = global.fbAccessToken
+    } else if (!accessToken) {
+      // Tenta buscar o token individual do usuário no banco caso não tenha vindo do frontend
+      const userId = request.headers.get('X-User-Id')
+      if (userId) {
+        const userSettings = await prisma.userSettings.findUnique({ where: { userId } })
+        if (userSettings?.fbAccessToken) {
+          accessToken = userSettings.fbAccessToken
+        }
+      }
     }
 
     if (!accessToken || !adAccountId) {

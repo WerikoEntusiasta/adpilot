@@ -56,6 +56,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }
           })
           .catch(console.error)
+
+        // Sync individual user settings (like Facebook token set by Admin)
+        if (auth.user?.id) {
+          fetch('/api/user/settings', {
+            headers: { 'X-User-Id': auth.user.id }
+          })
+            .then(r => r.json())
+            .then(data => {
+              if (data.settings) {
+                // If the DB has fb keys, sync them to the local store
+                if (data.settings.fbAccessToken && data.settings.fbAccessToken !== settings.fbAccessToken) {
+                  settings.setFbKeys({ fbAccessToken: data.settings.fbAccessToken })
+                }
+                if (data.settings.fbAdAccountId && data.settings.fbAdAccountId !== settings.fbAdAccountId) {
+                  settings.setFbKeys({ fbAdAccountId: data.settings.fbAdAccountId })
+                }
+              }
+            })
+            .catch(console.error)
+        }
       }
     }
   }, [mounted, auth.isAuthenticated, auth.user, router, settings])

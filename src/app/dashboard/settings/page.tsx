@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Settings, Key, Eye, EyeOff, CheckCircle2, XCircle, Loader2, Shield, Brain, AlertTriangle, RefreshCw, Layers, Sparkles, Server, CreditCard, Zap, Check } from 'lucide-react'
 import { useSettings } from '@/lib/store'
+import { useAuth } from '@/lib/auth-store'
 import { useSearchParams } from 'next/navigation'
 
 interface AdAccountItem {
@@ -26,6 +27,7 @@ interface AiModelItem {
 
 function SettingsContent() {
   const settings = useSettings()
+  const auth = useAuth()
   const searchParams = useSearchParams()
 
   const [showTokens, setShowTokens] = useState(false)
@@ -379,7 +381,26 @@ function SettingsContent() {
               {isValidatingFb ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Shield className="h-4 w-4 mr-2" />}
               {isValidatingFb ? 'Testando Conexão...' : 'Testar Conexão com Facebook'}
             </Button>
-            <Button onClick={() => { setSavedFb(true); setTimeout(() => setSavedFb(false), 2000) }} disabled={!settings.fbAccessToken}>
+            <Button 
+              onClick={async () => { 
+                try {
+                  // Save to DB so it persists across computers
+                  await fetch('/api/user/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-Id': auth.user?.id || '' },
+                    body: JSON.stringify({
+                      fbAccessToken: settings.fbAccessToken,
+                      fbAdAccountId: settings.fbAdAccountId
+                    })
+                  })
+                  setSavedFb(true); 
+                  setTimeout(() => setSavedFb(false), 2000)
+                } catch (e) {
+                  console.error(e)
+                }
+              }} 
+              disabled={!settings.fbAccessToken}
+            >
               {savedFb ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Salvo!</> : 'Salvar Seleção'}
             </Button>
           </div>
