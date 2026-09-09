@@ -151,10 +151,15 @@ export default function AdminPage() {
       })
       if (res.ok) {
         setSavedSettings(true)
+        alert('✅ Configurações Globais salvas com sucesso no banco de dados!')
         setTimeout(() => setSavedSettings(false), 3000)
+      } else {
+        const data = await res.json()
+        alert('❌ Erro ao salvar: ' + (data.error || 'Desconhecido'))
       }
     } catch (e) {
       console.error(e)
+      alert('❌ Erro de conexão ao salvar.')
     } finally {
       setIsUpdatingDbUrl(false)
     }

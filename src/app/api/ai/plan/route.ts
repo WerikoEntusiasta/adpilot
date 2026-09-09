@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { getChatCompletionsUrl, getAiAuthHeaders } from '@/lib/ai-helpers'
 import { prisma } from '@/lib/prisma'
 
@@ -11,12 +11,12 @@ export async function POST(request: Request) {
       dbSettings = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
     }
 
-    const finalEndpoint = endpoint || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || dbSettings?.aiEndpoint || 'https://api.openai.com/v1'
+    const finalEndpoint = (endpoint && endpoint !== 'https://api.openai.com/v1' ? endpoint : null) || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || dbSettings?.aiEndpoint || 'https://api.openai.com/v1'
     const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? (process.env.OPENAI_API_KEY || dbSettings?.aiApiKey) : apiKey
-    const finalModel = model || process.env.OPENAI_MODEL || dbSettings?.aiModel || 'gpt-4o' // Default to typical OpenAI or any user preferred model
+    const finalModel = (model && model !== 'opencode-zen' && model !== 'gpt-4o' ? model : null) || process.env.OPENAI_MODEL || dbSettings?.aiModel || 'gpt-4o' // Default to typical OpenAI or any user preferred model
 
     if (!finalApiKey) {
-      return NextResponse.json({ error: 'IA não configurada. Configure no painel ou via variável de ambiente OPENAI_API_KEY.' }, { status: 400 })
+      return NextResponse.json({ error: 'IA nÃ£o configurada. Configure no painel ou via variÃ¡vel de ambiente OPENAI_API_KEY.' }, { status: 400 })
     }
 
     const url = getChatCompletionsUrl(finalEndpoint)
@@ -30,9 +30,9 @@ export async function POST(request: Request) {
         messages: [
           {
             role: 'system',
-            content: `Você é um especialista em mídia paga e Facebook Ads. O usuário vai descrever o que deseja anunciar e você deve gerar um plano completo de campanha.
+            content: `VocÃª Ã© um especialista em mÃ­dia paga e Facebook Ads. O usuÃ¡rio vai descrever o que deseja anunciar e vocÃª deve gerar um plano completo de campanha.
 
-Responda SOMENTE com um JSON válido (sem markdown, sem codeblock) no seguinte formato:
+Responda SOMENTE com um JSON vÃ¡lido (sem markdown, sem codeblock) no seguinte formato:
 {
   "campaignName": "Nome sugerido da campanha",
   "objective": "OUTCOME_TRAFFIC | OUTCOME_SALES | OUTCOME_LEADS | OUTCOME_AWARENESS | OUTCOME_ENGAGEMENT",
@@ -43,24 +43,24 @@ Responda SOMENTE com um JSON válido (sem markdown, sem codeblock) no seguinte f
     "gender": "all | male | female",
     "locations": "Brasil",
     "interests": ["interesse1", "interesse2"],
-    "customAudiences": "Descrição de públicos personalizados sugeridos"
+    "customAudiences": "DescriÃ§Ã£o de pÃºblicos personalizados sugeridos"
   },
   "budget": {
     "type": "daily | lifetime",
     "amount": 100,
     "duration": 30,
-    "reason": "Motivo do orçamento sugerido"
+    "reason": "Motivo do orÃ§amento sugerido"
   },
   "ads": [
     {
-      "name": "Nome do anúncio",
-      "headline": "Headline do anúncio",
-      "primaryText": "Texto principal que aparece acima da mídia",
-      "description": "Descrição do link",
+      "name": "Nome do anÃºncio",
+      "headline": "Headline do anÃºncio",
+      "primaryText": "Texto principal que aparece acima da mÃ­dia",
+      "description": "DescriÃ§Ã£o do link",
       "cta": "LEARN_MORE | SHOP_NOW | SIGN_UP | CONTACT_US | GET_OFFER | DOWNLOAD"
     }
   ],
-  "strategy": "Explicação da estratégia geral em 2-3 frases",
+  "strategy": "ExplicaÃ§Ã£o da estratÃ©gia geral em 2-3 frases",
   "tips": ["Dica 1", "Dica 2"]
 }`,
           },
@@ -87,7 +87,7 @@ Responda SOMENTE com um JSON válido (sem markdown, sem codeblock) no seguinte f
       const plan = JSON.parse(cleaned)
       return NextResponse.json({ plan })
     } catch {
-      return NextResponse.json({ error: 'A IA não retornou um formato JSON válido.', raw: content }, { status: 422 })
+      return NextResponse.json({ error: 'A IA nÃ£o retornou um formato JSON vÃ¡lido.', raw: content }, { status: 422 })
     }
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Erro ao comunicar com a IA' }, { status: 500 })

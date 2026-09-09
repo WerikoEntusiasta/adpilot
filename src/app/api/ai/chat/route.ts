@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { getChatCompletionsUrl, getAiAuthHeaders } from '@/lib/ai-helpers'
 import { prisma } from '@/lib/prisma'
 
@@ -11,12 +11,12 @@ export async function POST(request: Request) {
       dbSettings = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
     }
 
-    const finalEndpoint = endpoint || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || dbSettings?.aiEndpoint || 'https://api.openai.com/v1'
+    const finalEndpoint = (endpoint && endpoint !== 'https://api.openai.com/v1' ? endpoint : null) || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || dbSettings?.aiEndpoint || 'https://api.openai.com/v1'
     const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? (process.env.OPENAI_API_KEY || dbSettings?.aiApiKey) : apiKey
-    const finalModel = model || process.env.OPENAI_MODEL || dbSettings?.aiModel || 'gpt-4o'
+    const finalModel = (model && model !== 'opencode-zen' && model !== 'gpt-4o' ? model : null) || process.env.OPENAI_MODEL || dbSettings?.aiModel || 'gpt-4o'
 
     if (!finalApiKey) {
-      return NextResponse.json({ error: 'Endpoint ou Chave de IA não configurados. Configure no painel ou .env' }, { status: 400 })
+      return NextResponse.json({ error: 'Endpoint ou Chave de IA nÃ£o configurados. Configure no painel ou .env' }, { status: 400 })
     }
 
     const url = getChatCompletionsUrl(finalEndpoint)
@@ -30,11 +30,11 @@ export async function POST(request: Request) {
         messages: [
           {
             role: 'system',
-            content: `Você é o AdPilot AI Advisor, um especialista em tráfego pago e Facebook Ads.
-Você ajuda a analisar campanhas, sugerir melhorias, planejar novas campanhas e otimizar resultados.
-Responda sempre em português do Brasil, de forma direta e prática.
-Use emojis com moderação para destacar pontos importantes.
-Quando sugerir mudanças, seja específico com números e valores.`,
+            content: `VocÃª Ã© o AdPilot AI Advisor, um especialista em trÃ¡fego pago e Facebook Ads.
+VocÃª ajuda a analisar campanhas, sugerir melhorias, planejar novas campanhas e otimizar resultados.
+Responda sempre em portuguÃªs do Brasil, de forma direta e prÃ¡tica.
+Use emojis com moderaÃ§Ã£o para destacar pontos importantes.
+Quando sugerir mudanÃ§as, seja especÃ­fico com nÃºmeros e valores.`,
           },
           ...messages,
         ],

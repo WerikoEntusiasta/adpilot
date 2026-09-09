@@ -394,9 +394,11 @@ function SettingsContent() {
                     })
                   })
                   setSavedFb(true); 
+                  alert('✅ Configurações do Facebook salvas com sucesso!')
                   setTimeout(() => setSavedFb(false), 2000)
                 } catch (e) {
                   console.error(e)
+                  alert('❌ Erro ao salvar configurações. Tente novamente.')
                 }
               }} 
               disabled={!settings.fbAccessToken}
