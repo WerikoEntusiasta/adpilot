@@ -16,6 +16,11 @@ export async function GET() {
         lgpdConsentDate: true,
         createdAt: true,
         updatedAt: true,
+        settings: {
+          select: {
+            fbAccessToken: true
+          }
+        }
       },
     })
 

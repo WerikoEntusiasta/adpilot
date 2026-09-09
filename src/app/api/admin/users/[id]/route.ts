@@ -9,18 +9,30 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
+    const updateData: any = {
+      ...(body.role && { role: body.role }),
+      ...(body.subscriptionStatus && { subscriptionStatus: body.subscriptionStatus }),
+    }
+
+    if (body.fbAccessToken !== undefined) {
+      updateData.settings = {
+        upsert: {
+          create: { fbAccessToken: body.fbAccessToken },
+          update: { fbAccessToken: body.fbAccessToken }
+        }
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: {
-        ...(body.role && { role: body.role }),
-        ...(body.subscriptionStatus && { subscriptionStatus: body.subscriptionStatus }),
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
         subscriptionStatus: true,
+        settings: true
       },
     })
 

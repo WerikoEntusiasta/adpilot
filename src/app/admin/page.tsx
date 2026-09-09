@@ -24,6 +24,9 @@ interface UserRecord {
   lgpdConsentDate: string
   createdAt: string
   updatedAt: string
+  settings?: {
+    fbAccessToken?: string | null
+  }
 }
 
 export default function AdminPage() {
@@ -64,6 +67,12 @@ export default function AdminPage() {
   const [newUserStatus, setNewUserStatus] = useState<'ACTIVE_PRO' | 'FREE_DEMO'>('ACTIVE_PRO')
   const [isCreatingUser, setIsCreatingUser] = useState(false)
   const [createUserError, setCreateUserError] = useState<string | null>(null)
+
+  // Individual Token State
+  const [isTokenModalOpen, setIsTokenModalOpen] = useState(false)
+  const [selectedUserForToken, setSelectedUserForToken] = useState<UserRecord | null>(null)
+  const [userTokenValue, setUserTokenValue] = useState('')
+  const [isSavingUserToken, setIsSavingUserToken] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -224,6 +233,26 @@ export default function AdminPage() {
       if (res.ok) fetchRealData()
     } catch (err) {
       console.error('Erro ao deletar no SQLite:', err)
+    }
+  }
+
+  const handleSaveUserToken = async () => {
+    if (!selectedUserForToken) return
+    setIsSavingUserToken(true)
+    try {
+      const res = await fetch(`/api/admin/users/${selectedUserForToken.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fbAccessToken: userTokenValue })
+      })
+      if (res.ok) {
+        setIsTokenModalOpen(false)
+        fetchRealData()
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSavingUserToken(false)
     }
   }
 
@@ -596,6 +625,7 @@ export default function AdminPage() {
                     <th className="pb-3 pr-4 font-medium">Função</th>
                     <th className="pb-3 pr-4 font-medium">Plano Stripe</th>
                     <th className="pb-3 pr-4 font-medium">Termos & LGPD</th>
+                    <th className="pb-3 pr-4 font-medium">Token FB</th>
                     <th className="pb-3 pr-4 font-medium">Data Cadastro</th>
                     <th className="pb-3 font-medium text-right">Ações no SQLite</th>
                   </tr>
@@ -630,6 +660,21 @@ export default function AdminPage() {
                         ) : (
                           <Badge variant="destructive" className="text-[10px] h-5">Pendente</Badge>
                         )}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 text-xs px-2"
+                          onClick={() => {
+                            setSelectedUserForToken(u)
+                            setUserTokenValue(u.settings?.fbAccessToken || '')
+                            setIsTokenModalOpen(true)
+                          }}
+                        >
+                          <KeyRound className="h-3 w-3 mr-1" />
+                          {u.settings?.fbAccessToken ? 'Editar Token' : 'Add Token'}
+                        </Button>
                       </td>
                       <td className="py-3 pr-4 text-xs text-muted-foreground">
                         {new Date(u.createdAt).toLocaleDateString('pt-BR')}
@@ -673,6 +718,37 @@ export default function AdminPage() {
               </table>
             </div>
           )}
+
+          <Dialog open={isTokenModalOpen} onOpenChange={setIsTokenModalOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Configurar Token Individual</DialogTitle>
+                <DialogDescription>
+                  Defina um Token do Facebook exclusivo para <strong>{selectedUserForToken?.name}</strong>. 
+                  Isso sobrescreve o uso do token global da agência caso este usuário utilize a conexão própria.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="user-token">Token Oficial do Facebook (System User)</Label>
+                  <Input 
+                    id="user-token" 
+                    value={userTokenValue} 
+                    onChange={e => setUserTokenValue(e.target.value)} 
+                    placeholder="EAA..."
+                  />
+                  <p className="text-xs text-muted-foreground">Deixe em branco para remover o token individual configurado pelo Admin.</p>
+                </div>
+              </div>
+              <DialogFooter className="pt-4">
+                <Button variant="outline" onClick={() => setIsTokenModalOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSaveUserToken} disabled={isSavingUserToken}>
+                  {isSavingUserToken ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : 'Salvar Token'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
         </CardContent>
       </Card>
     </div>
