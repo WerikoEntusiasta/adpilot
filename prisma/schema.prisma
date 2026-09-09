@@ -15,6 +15,8 @@ model User {
   role               String        @default("USER") // ADMIN | USER
   subscriptionStatus String        @default("FREE_DEMO") // ACTIVE_PRO | FREE_DEMO
   stripeCustomerId   String?
+  paymentMethod      String?       // STRIPE | PIX | MANUAL
+  planExpiresAt      DateTime?
   lgpdConsent        Boolean       @default(true)
   lgpdConsentDate    DateTime      @default(now())
   createdAt          DateTime      @default(now())

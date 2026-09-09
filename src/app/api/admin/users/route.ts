@@ -12,6 +12,8 @@ export async function GET() {
         email: true,
         role: true,
         subscriptionStatus: true,
+        paymentMethod: true,
+        planExpiresAt: true,
         lgpdConsent: true,
         lgpdConsentDate: true,
         createdAt: true,
@@ -58,9 +60,12 @@ export async function GET() {
     const localPrice = globalSetting?.globalPrice || 250
     const localMrr = activeProUsers.length * localPrice
 
-    const finalActivePro = stripeActiveCount > 0 ? stripeActiveCount : activeProUsers.length
-    const finalMrr = stripeMrr > 0 ? stripeMrr : localMrr
-    const source = stripeMrr > 0 ? 'stripe' : 'sqlite'
+    const manualProUsers = activeProUsers.filter(u => !u.paymentMethod || u.paymentMethod !== 'STRIPE')
+    const manualMrr = manualProUsers.length * localPrice
+
+    const finalActivePro = stripeActiveCount + manualProUsers.length
+    const finalMrr = stripeMrr + manualMrr
+    const source = (stripeActiveCount > 0 || manualProUsers.length > 0) ? 'mixed' : 'sqlite'
 
     // Cálculo das Novas Métricas SaaS
     const arpu = finalActivePro > 0 ? (finalMrr / finalActivePro) : localPrice

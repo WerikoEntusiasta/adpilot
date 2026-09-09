@@ -12,6 +12,13 @@ export async function PATCH(
     const updateData: any = {
       ...(body.role && { role: body.role }),
       ...(body.subscriptionStatus && { subscriptionStatus: body.subscriptionStatus }),
+      ...(body.paymentMethod && { paymentMethod: body.paymentMethod })
+    }
+    
+    if (body.planDays !== undefined) {
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + body.planDays)
+      updateData.planExpiresAt = expiresAt
     }
 
     if (body.fbAccessToken !== undefined) {

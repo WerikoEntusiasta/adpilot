@@ -20,6 +20,8 @@ interface UserRecord {
   email: string
   role: 'ADMIN' | 'USER' | string
   subscriptionStatus: 'ACTIVE_PRO' | 'FREE_DEMO' | string
+  paymentMethod?: string | null
+  planExpiresAt?: string | null
   lgpdConsent: boolean
   lgpdConsentDate: string
   createdAt: string
@@ -73,6 +75,13 @@ export default function AdminPage() {
   const [selectedUserForToken, setSelectedUserForToken] = useState<UserRecord | null>(null)
   const [userTokenValue, setUserTokenValue] = useState('')
   const [isSavingUserToken, setIsSavingUserToken] = useState(false)
+
+  // Financial Control State
+  const [isFinancialModalOpen, setIsFinancialModalOpen] = useState(false)
+  const [selectedUserForFinance, setSelectedUserForFinance] = useState<UserRecord | null>(null)
+  const [financePaymentMethod, setFinancePaymentMethod] = useState('PIX')
+  const [financeDays, setFinanceDays] = useState('30')
+  const [isSavingFinance, setIsSavingFinance] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -256,6 +265,30 @@ export default function AdminPage() {
     }
   }
 
+  const handleSaveFinancial = async () => {
+    if (!selectedUserForFinance) return
+    setIsSavingFinance(true)
+    try {
+      const res = await fetch(`/api/admin/users/${selectedUserForFinance.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          subscriptionStatus: 'ACTIVE_PRO',
+          paymentMethod: financePaymentMethod,
+          planDays: parseInt(financeDays)
+        })
+      })
+      if (res.ok) {
+        setIsFinancialModalOpen(false)
+        fetchRealData()
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSavingFinance(false)
+    }
+  }
+
   // Filter users
   const filteredUsers = users.filter((u) => {
     const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -378,12 +411,12 @@ export default function AdminPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} dy={10} />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                  tickFormatter={(val) => `R$ ${val / 1000}k`}
+                  tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} 
+                  tickFormatter={(value) => `R$ ${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`}
                   dx={-10}
                 />
                 <Tooltip 
@@ -646,7 +679,12 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 pr-4">
                         {u.subscriptionStatus === 'ACTIVE_PRO' ? (
-                          <Badge variant="success" className="text-[10px] h-5"><CheckCircle2 className="h-3 w-3 mr-1" /> PRO</Badge>
+                          <div className="flex flex-col gap-1 items-start">
+                            <Badge variant="success" className="text-[10px] h-5"><CheckCircle2 className="h-3 w-3 mr-1" /> PRO {u.paymentMethod && u.paymentMethod !== 'STRIPE' && `(${u.paymentMethod})`}</Badge>
+                            {u.planExpiresAt && (
+                              <span className="text-[10px] text-muted-foreground">Vence: {new Date(u.planExpiresAt).toLocaleDateString('pt-BR')}</span>
+                            )}
+                          </div>
                         ) : (
                           <Badge variant="secondary" className="text-[10px] h-5">Free Demo</Badge>
                         )}
@@ -690,6 +728,19 @@ export default function AdminPage() {
                           >
                             <CreditCard className="h-3.5 w-3.5 mr-1" />
                             {u.subscriptionStatus === 'ACTIVE_PRO' ? 'Rebaixar' : 'Ativar Pro'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUserForFinance(u)
+                              setIsFinancialModalOpen(true)
+                            }}
+                            title="Registrar Pagamento Manual/Externo"
+                            className="h-8 text-xs text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
+                          >
+                            <DollarSign className="h-3.5 w-3.5 mr-1" />
+                            Pag. Manual
                           </Button>
                           <Button
                             variant="ghost"
@@ -765,6 +816,48 @@ export default function AdminPage() {
                 <Button variant="outline" onClick={() => setIsTokenModalOpen(false)}>Cancelar</Button>
                 <Button onClick={handleSaveUserToken} disabled={isSavingUserToken}>
                   {isSavingUserToken ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : 'Salvar Token'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isFinancialModalOpen} onOpenChange={setIsFinancialModalOpen}>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>Registrar Pagamento Manual</DialogTitle>
+                <DialogDescription>
+                  Ativar conta PRO para <strong>{selectedUserForFinance?.name}</strong> com base em um pagamento recebido fora da plataforma.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label>Método de Pagamento</Label>
+                  <select 
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={financePaymentMethod}
+                    onChange={(e) => setFinancePaymentMethod(e.target.value)}
+                  >
+                    <option value="PIX">PIX</option>
+                    <option value="TRANSFER">Transferência Bancária</option>
+                    <option value="MANUAL">Outro (Manual)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Dias de Acesso (Expiração)</Label>
+                  <Input 
+                    type="number"
+                    value={financeDays}
+                    onChange={e => setFinanceDays(e.target.value)}
+                    min="1"
+                    step="1"
+                  />
+                  <p className="text-xs text-muted-foreground">O acesso vai expirar automaticamente em {financeDays} dias.</p>
+                </div>
+              </div>
+              <DialogFooter className="pt-4">
+                <Button variant="outline" onClick={() => setIsFinancialModalOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSaveFinancial} disabled={isSavingFinance} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  {isSavingFinance ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registrando...</> : 'Registrar Pagamento'}
                 </Button>
               </DialogFooter>
             </DialogContent>
