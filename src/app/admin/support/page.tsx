@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -38,7 +38,7 @@ export default function AdminSupportPage() {
 
   const handleClose = async (id: string) => {
     try {
-      const res = await fetch(/api/admin/support/\, {
+      const res = await fetch(`/api/admin/support/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'CLOSED' })

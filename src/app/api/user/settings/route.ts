@@ -14,8 +14,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json({ error: 'Erro ao buscar configurações' }, { status: 500 })
   }
-}import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+}
 
 export async function POST(request: Request) {
   try {
