@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+Ôªøimport { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const { userId } = await request.json()
 
     if (!userId) {
-      return NextResponse.json({ error: 'ID do usu·rio È obrigatÛrio' }, { status: 400 })
+      return NextResponse.json({ error: 'ID do usu√°rio √© obrigat√≥rio' }, { status: 400 })
     }
 
     // Update the user
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         ipAddress,
         userAgent,
         details: JSON.stringify({ 
-          agreedTo: 'Termos de Uso e IsenÁ„o de Responsabilidade (PÛs-Login)',
+          agreedTo: 'Termos de Uso e Isen√ß√£o de Responsabilidade (P√≥s-Login)',
           source: 'dashboard_popup'
         })
       }

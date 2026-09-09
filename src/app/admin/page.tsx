@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { ShieldCheck, Users, CreditCard, Activity, Server, Zap, Search, UserCheck, Trash2, CheckCircle2, RefreshCw, AlertCircle, DollarSign, Settings, Lock, KeyRound, Loader2, BrainCircuit, TrendingUp, UserMinus, Gem, UserPlus } from 'lucide-react'
+import { ShieldCheck, Users, CreditCard, Activity, Server, Zap, Search, UserCheck, Trash2, CheckCircle2, RefreshCw, AlertCircle, DollarSign, Settings, Lock, KeyRound, Loader2, BrainCircuit, TrendingUp, UserMinus, Gem, UserPlus, LogIn } from 'lucide-react'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-store'
 import { useRouter } from 'next/navigation'
@@ -30,7 +30,7 @@ interface UserRecord {
 }
 
 export default function AdminPage() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, setAuth, token } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
 
@@ -690,6 +690,27 @@ export default function AdminPage() {
                           >
                             <CreditCard className="h-3.5 w-3.5 mr-1" />
                             {u.subscriptionStatus === 'ACTIVE_PRO' ? 'Rebaixar' : 'Ativar Pro'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (!token) return
+                              setAuth({
+                                id: u.id,
+                                name: u.name,
+                                email: u.email,
+                                role: 'USER', // Always force USER so they don't hit admin redirect
+                                lgpdConsent: u.lgpdConsent,
+                                createdAt: u.createdAt
+                              }, token)
+                              router.push('/dashboard')
+                            }}
+                            title="Entrar na conta do usuário para testes"
+                            className="h-8 text-xs text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                          >
+                            <LogIn className="h-3.5 w-3.5 mr-1" />
+                            Ver como
                           </Button>
                           <Button
                             variant="ghost"
