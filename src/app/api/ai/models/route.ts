@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const url = getModelsUrl(finalEndpoint)
-    const headers = getAiAuthHeaders(finalApiKey)
+    const headers = getAiAuthHeaders(finalApiKey, finalEndpoint)
 
     const res = await fetch(url, { method: 'GET', headers })
     if (!res.ok) {

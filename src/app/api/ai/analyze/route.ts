@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     const url = getChatCompletionsUrl(finalEndpoint)
-    const headers = getAiAuthHeaders(finalApiKey)
+    const headers = getAiAuthHeaders(finalApiKey, finalEndpoint)
 
     const prompt = `Analise o seguinte conjunto de campanhas do Facebook Ads e gere sugestÃµes acionÃ¡veis em JSON:
 

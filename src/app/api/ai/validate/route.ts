@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     const url = getChatCompletionsUrl(finalEndpoint)
-    const headers = getAiAuthHeaders(finalApiKey)
+    const headers = getAiAuthHeaders(finalApiKey, finalEndpoint)
 
     const res = await fetch(url, {
       method: 'POST',

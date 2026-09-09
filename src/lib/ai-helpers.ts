@@ -22,7 +22,7 @@ export function getModelsUrl(endpoint: string): string {
   return `${clean}/models`
 }
 
-export function getAiAuthHeaders(apiKey?: string): Record<string, string> {
+export function getAiAuthHeaders(apiKey?: string, endpoint?: string): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
@@ -32,5 +32,11 @@ export function getAiAuthHeaders(apiKey?: string): Record<string, string> {
     // Default fallback header for local servers like OpenCode/Ollama that accept any bearer
     headers['Authorization'] = 'Bearer opencode'
   }
+  
+  // OpenCode Go compatibility requirement
+  if (endpoint && endpoint.toLowerCase().includes('opencode')) {
+    headers['x-opencode-session'] = 'adpilot-session'
+  }
+  
   return headers
 }
