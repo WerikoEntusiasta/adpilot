@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useMemo } from 'react'
 import { CampaignTable } from '@/components/dashboard/campaign-table'
-import { mockCampaigns, type Campaign } from '@/lib/mock-data'
+import type { Campaign } from '@/lib/mock-data'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, Filter, RefreshCw, AlertCircle } from 'lucide-react'
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 export default function CampaignsPage() {
   const settings = useSettings()
   const [mounted, setMounted] = useState(false)
-  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [objectiveFilter, setObjectiveFilter] = useState<string>('all')
@@ -41,14 +41,14 @@ export default function CampaignsPage() {
 
       const data = await res.json()
       if (!res.ok) {
-        setErrorMsg(data.error || 'Não foi possível carregar campanhas da API do Facebook.')
+        setErrorMsg(data.error || 'NÃ£o foi possÃ­vel carregar campanhas da API do Facebook.')
         setIsRealData(false)
       } else {
         setCampaigns(data.campaigns || [])
         setIsRealData(true)
       }
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Erro de conexão')
+      setErrorMsg(err instanceof Error ? err.message : 'Erro de conexÃ£o')
       setIsRealData(false)
     }
     setIsLoading(false)
@@ -83,11 +83,11 @@ export default function CampaignsPage() {
             Campanhas
             {isRealData && (
               <span className="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-normal px-2.5 py-0.5 rounded-full">
-                ● Facebook API Conectado
+                â— Facebook API Conectado
               </span>
             )}
           </h1>
-          <p className="text-muted-foreground mt-1">Gerencie e monitore todas as suas campanhas de anúncios</p>
+          <p className="text-muted-foreground mt-1">Gerencie e monitore todas as suas campanhas de anÃºncios</p>
         </div>
 
         {mounted && settings.hasFbKeys() && (
@@ -135,7 +135,7 @@ export default function CampaignsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os Objetivos</SelectItem>
-              <SelectItem value="OUTCOME_TRAFFIC">Tráfego</SelectItem>
+              <SelectItem value="OUTCOME_TRAFFIC">TrÃ¡fego</SelectItem>
               <SelectItem value="OUTCOME_SALES">Vendas</SelectItem>
               <SelectItem value="OUTCOME_LEADS">Leads</SelectItem>
               <SelectItem value="OUTCOME_AWARENESS">Alcance</SelectItem>
@@ -149,3 +149,4 @@ export default function CampaignsPage() {
     </div>
   )
 }
+

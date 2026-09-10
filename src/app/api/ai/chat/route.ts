@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const finalModel = (model && model !== 'opencode-zen' && model !== 'gpt-4o' ? model : null) || process.env.OPENAI_MODEL || dbSettings?.aiModel || 'gpt-4o'
 
     if (!finalApiKey) {
-      return NextResponse.json({ error: 'Endpoint ou Chave de IA nÃ£o configurados. Configure no painel ou .env' }, { status: 400 })
+      return NextResponse.json({ error: 'IA não configurada via painel ou .env' }, { status: 400 })
     }
 
     const url = getChatCompletionsUrl(finalEndpoint)
@@ -28,33 +28,27 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: finalModel,
         messages: [
-          {
-            role: 'system',
-            content: `VocÃª Ã© o AdPilot AI Advisor, um especialista em trÃ¡fego pago e Facebook Ads.
-VocÃª ajuda a analisar campanhas, sugerir melhorias, planejar novas campanhas e otimizar resultados.
-Responda sempre em portuguÃªs do Brasil, de forma direta e prÃ¡tica.
-Use emojis com moderaÃ§Ã£o para destacar pontos importantes.
-Quando sugerir mudanÃ§as, seja especÃ­fico com nÃºmeros e valores.`,
+          { 
+            role: 'system', 
+            content: \Você é o AdPilot AI, um Especialista Senior em Tráfego Pago (Meta Ads) e Mídia Programática. 
+Sua missão é ajudar o usuário respondendo suas dúvidas de forma direta, técnica, porém didática (explique o raciocínio por trás de cada estratégia para que até um iniciante entenda).
+- Sempre baseie-se nas ÚLTIMAS atualizações do Facebook Ads (como as campanhas Advantage+ Shopping, orçamentos automáticos, pixel de conversão avançado).
+- Quando o usuário enviar o contexto atual de campanhas dele na última mensagem, utilize ESSES DADOS REAIS para basear sua resposta. NUNCA invente campanhas fictícias.
+- Responda apenas o que for perguntado. Evite mensagens demasiadamente longas, a menos que seja solicitado.\
           },
-          ...messages,
+          ...messages
         ],
-        temperature: 0.7,
-        max_tokens: 2000,
       }),
     })
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      const msg = err?.error?.message || `Erro do servidor de IA (${res.status}): ${res.statusText}`
-      return NextResponse.json({ error: msg }, { status: res.status })
+      return NextResponse.json({ error: err?.error?.message || \Erro do servidor de IA (\)\ }, { status: res.status })
     }
 
     const data = await res.json()
-    const content = data.choices?.[0]?.message?.content || 'Sem resposta da IA.'
-
-    return NextResponse.json({ content })
+    return NextResponse.json({ reply: data.choices?.[0]?.message?.content || '' })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erro ao conectar com o servidor de IA'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Erro ao comunicar com a IA' }, { status: 500 })
   }
 }
