@@ -26,6 +26,7 @@ model User {
   auditLogs          AuditLog[]
   lgpdRequests       LgpdRequest[]
   supportTickets     SupportTicket[]
+  dailySuggestions   DailyAdvisorSuggestion[]
 }
 
 model SupportTicket {
@@ -78,4 +79,15 @@ model LgpdRequest {
   status      String    @default("COMPLETED") // PENDING | COMPLETED
   requestedAt DateTime  @default(now())
   completedAt DateTime? @default(now())
+}
+
+model DailyAdvisorSuggestion {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        String
+  suggestions String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, date])
 }

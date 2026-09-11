@@ -1,5 +1,6 @@
-﻿'use client'
+'use client'
 
+import { useAuth } from '@/lib/auth-store'
 import { useEffect, useState } from 'react'
 import type { AiSuggestion, Campaign } from '@/lib/mock-data'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
@@ -8,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
-import { Brain, TrendingUp, AlertTriangle, Lightbulb, Sparkles, Send, CheckCircle2, X, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
+import { Brain, Calendar, TrendingUp, AlertTriangle, Lightbulb, Sparkles, Send, CheckCircle2, X, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSettings } from '@/lib/store'
 
@@ -29,6 +30,9 @@ const impactConfig = {
 
 export default function AdvisorPage() {
   const settings = useSettings()
+  const auth = useAuth()
+  const [dailyInfo, setDailyInfo] = useState<{ date: string; createdAt: string } | null>(null)
+  const [isLoadingDaily, setIsLoadingDaily] = useState(true)
   
   // Estado para garantir que a renderização do cliente e servidor batam (Next.js Hydration)
   const [mounted, setMounted] = useState(false)
@@ -61,6 +65,27 @@ export default function AdvisorPage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Carrega sugestões diárias das 12:00 salvas no banco
+  useEffect(() => {
+    if (mounted && auth.user?.id) {
+      setIsLoadingDaily(true)
+      fetch('/api/advisor/daily', {
+        headers: { 'X-User-Id': auth.user.id }
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.suggestions && Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+          setSuggestions(data.suggestions)
+          setDailyInfo({ date: data.date, createdAt: data.createdAt })
+        }
+      })
+      .catch(console.error)
+      .finally(() => setIsLoadingDaily(false))
+    } else if (mounted) {
+      setIsLoadingDaily(false)
+    }
+  }, [mounted, auth.user?.id])
 
   // Carrega as campanhas reais do Facebook automaticamente se o usuário tiver as chaves configuradas
   useEffect(() => {
@@ -109,6 +134,13 @@ export default function AdvisorPage() {
       const data = await res.json()
       if (res.ok && data.suggestions) {
         setSuggestions(data.suggestions)
+        if (auth.user?.id) {
+          fetch('/api/advisor/daily', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-User-Id': auth.user.id },
+            body: JSON.stringify({ suggestions: data.suggestions })
+          }).catch(console.error)
+        }
       } else {
         alert('Erro ao analisar: ' + (data.error || 'Desconhecido'))
       }
@@ -219,6 +251,28 @@ export default function AdvisorPage() {
           </Card>
 
           {/* Lista de Sugestões Renderizadas */}
+          {/* Banner de Sugestões Diárias das 12:00 */}
+          <div className="p-4 rounded-xl border bg-muted/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <p className="font-semibold">
+                  {dailyInfo 
+                    ? "Sugestões Diárias salvas para hoje (" + dailyInfo.date + ")"
+                    : "Relatório Diário Automático (12:00)"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  O AI Advisor analisa suas campanhas reais e gera novas recomendações automaticamente todos os dias às 12:00.
+                </p>
+              </div>
+            </div>
+            {dailyInfo && (
+              <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shrink-0">
+                Programado às 12:00
+              </Badge>
+            )}
+          </div>
+
           <Tabs defaultValue="all">
             <div className="flex items-center justify-between mb-4">
               <TabsList>
