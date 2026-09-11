@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
       const data = await res.json()
       if (!res.ok) {
-        setErrorMessage(data.error || 'NÃ£o foi possÃ­vel carregar os dados da API do Facebook.')
+        setErrorMessage(data.error || 'Não foi possível carregar os dados da API do Facebook.')
         setIsRealData(false)
       } else {
         setCampaigns(data.campaigns || [])
@@ -67,7 +67,7 @@ export default function DashboardPage() {
         setIsRealData(true)
       }
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Erro de conexÃ£o')
+      setErrorMessage(err instanceof Error ? err.message : 'Erro de conexão')
       setIsRealData(false)
     }
     setIsLoading(false)
@@ -140,14 +140,14 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            VisÃ£o Geral
+            Visão Geral
             {isRealData && (
               <span className="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-normal px-2.5 py-0.5 rounded-full">
                 â— Dados em Tempo Real (Facebook API)
               </span>
             )}
           </h1>
-          <p className="text-muted-foreground mt-1">MÃ©tricas modulares e inteligÃªncia de anÃºncios por objetivo</p>
+          <p className="text-muted-foreground mt-1">Métricas modulares e inteligência de anúncios por objetivo</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -164,18 +164,18 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl bg-card border gap-4">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Filter className="h-4 w-4 text-primary" />
-          <span>Filtrar MÃ©tricas por Objetivo da Campanha:</span>
+          <span>Filtrar Métricas por Objetivo da Campanha:</span>
         </div>
         <Select value={selectedObjective} onValueChange={setSelectedObjective}>
           <SelectTrigger className="w-full sm:w-[260px]">
             <SelectValue placeholder="Todos os Objetivos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">ðŸŒ Todos os Objetivos (VisÃ£o Geral)</SelectItem>
+            <SelectItem value="ALL">ðŸŒ Todos os Objetivos (Visão Geral)</SelectItem>
             <SelectItem value="MESSAGES">ðŸ’¬ Mensagens / WhatsApp / Direct</SelectItem>
-            <SelectItem value="OUTCOME_SALES">ðŸ›ï¸ Vendas & ConversÃµes</SelectItem>
-            <SelectItem value="OUTCOME_LEADS">ðŸ“‹ GeraÃ§Ã£o de Leads</SelectItem>
-            <SelectItem value="OUTCOME_TRAFFIC">ðŸš€ TrÃ¡fego & Cliques</SelectItem>
+            <SelectItem value="OUTCOME_SALES">ðŸ›ï¸ Vendas & Conversões</SelectItem>
+            <SelectItem value="OUTCOME_LEADS">ðŸ“‹ Geração de Leads</SelectItem>
+            <SelectItem value="OUTCOME_TRAFFIC">ðŸš€ Tráfego & Cliques</SelectItem>
             <SelectItem value="OUTCOME_AWARENESS">ðŸ“¢ Alcance & Branding</SelectItem>
           </SelectContent>
         </Select>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
         <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm space-y-1">
           <div className="flex items-center gap-2 font-bold">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>Erro na SincronizaÃ§Ã£o com o Facebook API:</span>
+            <span>Erro na Sincronização com o Facebook API:</span>
           </div>
           <p className="font-mono text-xs">{errorMessage}</p>
         </div>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
         <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
-            <span>Exibindo mÃ©tricas simuladas (Modo Demo). Configure suas chaves do Facebook em ConfiguraÃ§Ãµes para mÃ©tricas reais.</span>
+            <span>Exibindo métricas simuladas (Modo Demo). Configure suas chaves do Facebook em Configurações para métricas reais.</span>
           </div>
           <Button size="sm" variant="outline" asChild>
             <a href="/dashboard/settings">Configurar Chaves</a>
@@ -207,7 +207,7 @@ export default function DashboardPage() {
       {/* MODULAR KPI CARDS GRID */}
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          MÃ©tricas Principais ({selectedObjective === 'ALL' ? 'Todas as Campanhas' : selectedObjective})
+          Métricas Principais ({selectedObjective === 'ALL' ? 'Todas as Campanhas' : selectedObjective})
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {/* Universal Metrics */}
@@ -219,7 +219,7 @@ export default function DashboardPage() {
             isHighlight={true}
           />
           <KpiCard
-            title="ImpressÃµes"
+            title="Impressões"
             value={formatNumber(totalImpressions)}
             icon={Eye}
             badge="Geral"
@@ -263,7 +263,7 @@ export default function DashboardPage() {
 
           {/* Sales & Conversion Metrics */}
           <KpiCard
-            title="Vendas / ConversÃµes"
+            title="Vendas / Conversões"
             value={formatNumber(totalConversions)}
             icon={ShoppingBag}
             badge="Vendas / E-commerce"
@@ -271,7 +271,7 @@ export default function DashboardPage() {
             isHighlight={selectedObjective === 'OUTCOME_SALES'}
           />
           <KpiCard
-            title="ROAS MÃ©dio"
+            title="ROAS Médio"
             value={avgRoas > 0 ? `${avgRoas.toFixed(1)}x` : 'â€”'}
             icon={TrendingUp}
             badge="Vendas"
@@ -283,22 +283,22 @@ export default function DashboardPage() {
             title="Cliques no Link"
             value={formatNumber(totalClicks)}
             icon={MousePointer}
-            badge="TrÃ¡fego"
+            badge="Tráfego"
             isApplicable={isTrafficRelevant}
             isHighlight={selectedObjective === 'OUTCOME_TRAFFIC'}
           />
           <KpiCard
-            title="CTR MÃ©dio"
+            title="CTR Médio"
             value={formatPercent(avgCtr)}
             icon={TrendingUp}
-            badge="TrÃ¡fego"
+            badge="Tráfego"
             isApplicable={isTrafficRelevant}
           />
           <KpiCard
-            title="CPC MÃ©dio"
+            title="CPC Médio"
             value={formatCurrency(avgCpc)}
             icon={BarChart3}
-            badge="TrÃ¡fego"
+            badge="Tráfego"
             isApplicable={isTrafficRelevant}
           />
 

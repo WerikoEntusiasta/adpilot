@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? (process.env.OPENAI_API_KEY || dbSettings?.aiApiKey) : apiKey
 
     if (!finalApiKey) {
-      return NextResponse.json({ error: 'IA nÃ£o configurada via painel ou .env' }, { status: 400 })
+      return NextResponse.json({ error: 'IA não configurada via painel ou .env' }, { status: 400 })
     }
 
     const url = getModelsUrl(finalEndpoint)

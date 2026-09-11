@@ -41,14 +41,14 @@ export default function CampaignsPage() {
 
       const data = await res.json()
       if (!res.ok) {
-        setErrorMsg(data.error || 'NÃ£o foi possÃ­vel carregar campanhas da API do Facebook.')
+        setErrorMsg(data.error || 'Não foi possível carregar campanhas da API do Facebook.')
         setIsRealData(false)
       } else {
         setCampaigns(data.campaigns || [])
         setIsRealData(true)
       }
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Erro de conexÃ£o')
+      setErrorMsg(err instanceof Error ? err.message : 'Erro de conexão')
       setIsRealData(false)
     }
     setIsLoading(false)
@@ -87,7 +87,7 @@ export default function CampaignsPage() {
               </span>
             )}
           </h1>
-          <p className="text-muted-foreground mt-1">Gerencie e monitore todas as suas campanhas de anÃºncios</p>
+          <p className="text-muted-foreground mt-1">Gerencie e monitore todas as suas campanhas de anúncios</p>
         </div>
 
         {mounted && settings.hasFbKeys() && (
@@ -135,7 +135,7 @@ export default function CampaignsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os Objetivos</SelectItem>
-              <SelectItem value="OUTCOME_TRAFFIC">TrÃ¡fego</SelectItem>
+              <SelectItem value="OUTCOME_TRAFFIC">Tráfego</SelectItem>
               <SelectItem value="OUTCOME_SALES">Vendas</SelectItem>
               <SelectItem value="OUTCOME_LEADS">Leads</SelectItem>
               <SelectItem value="OUTCOME_AWARENESS">Alcance</SelectItem>
