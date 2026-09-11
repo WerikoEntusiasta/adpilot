@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         messages: [
           { 
             role: 'system', 
-            content: 'Você é o Suporte Oficial Técnico da Meta Ads. Responda exclusivamente com base nas documentações oficiais da Meta.'
+            content: 'Você é um Especialista Sênior em Anúncios e Resolução de Problemas no Facebook Ads. Auxilie com base nas melhores práticas, regras e diretrizes técnicas de anúncios. Responda exclusivamente com base nas documentações oficiais da Meta.'
           },
           ...messages
         ]

@@ -13,7 +13,7 @@ export default function MetaSupportPage() {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
-      content: 'Olá! Sou seu Especialista em Suporte e Documentação Meta Ads. Está enfrentando algum erro, rejeição de anúncio ou dúvida sobre o Gerenciador de Anúncios? Como posso ajudar?'
+      content: 'Olá! Sou seu Especialista em Anúncios e Resolução de Erros. Está enfrentando algum erro, rejeição ou dúvida sobre a plataforma? Como posso ajudar?'
     }
   ])
   const [input, setInput] = useState('')
@@ -56,10 +56,10 @@ export default function MetaSupportPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <HelpCircle className="h-8 w-8 text-primary" />
-          Ajuda & Documentação Meta
+          Central de Ajuda & Diretrizes
         </h1>
         <p className="text-muted-foreground mt-1">
-          Tire dúvidas técnicas, resolva bugs, bloqueios e entenda as políticas e funções oficiais do Facebook Ads Manager.
+          Tire dúvidas técnicas, resolva bugs, bloqueios e entenda as políticas, métricas e funções do Facebook Ads.
         </p>
       </div>
 
@@ -105,9 +105,9 @@ export default function MetaSupportPage() {
             <CardHeader className="border-b py-3 px-4">
               <CardTitle className="text-base flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                Chat Técnico Oficial Meta
+                Assistente Técnico de Anúncios
               </CardTitle>
-              <CardDescription className="text-xs">Respostas baseadas nas diretrizes e APIs da Meta</CardDescription>
+              <CardDescription className="text-xs">Tire dúvidas sobre erros, bloqueios e configurações</CardDescription>
             </CardHeader>
 
             <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -124,7 +124,7 @@ export default function MetaSupportPage() {
               {isLoading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 bg-muted rounded-xl w-fit">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Consultando base de conhecimento da Meta...
+                  Consultando base de conhecimento de anúncios...
                 </div>
               )}
             </CardContent>

@@ -26,7 +26,7 @@ const navItems = [
   { href: '/dashboard/campaigns', label: 'Campanhas', icon: Megaphone },
   { href: '/dashboard/advisor', label: 'IA Advisor', icon: Brain },
   { href: '/dashboard/planner', label: 'Planejador', icon: CalendarPlus },
-  { href: '/dashboard/meta-support', label: 'Ajuda & Docs Meta', icon: HelpCircle },
+  { href: '/dashboard/meta-support', label: 'Central de Ajuda', icon: HelpCircle },
   { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy },
   { href: '/dashboard/settings', label: 'ConfiguraÃ§Ãµes', icon: Settings },
 ]
