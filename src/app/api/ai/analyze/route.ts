@@ -27,13 +27,33 @@ export async function POST(request: Request) {
           impact: 'high',
           title: 'Nenhuma campanha detectada',
           description: 'A IA identificou que não há campanhas ativas reais conectadas na conta.',
-          action: { type: 'pause', description: 'Conecte sua conta do Facebook Ads.' }
+          action: { type: 'pause', description: 'Conecte sua conta do Facebook Ads nas configurações.' }
         }]
       })
     }
 
     const url = getChatCompletionsUrl(finalEndpoint)
     const headers = getAiAuthHeaders(finalApiKey, finalEndpoint)
+
+    const systemPrompt = "Você é o AdPilot, Especialista Master em Meta Ads e Tráfego Pago. " +
+      "Analise as métricas reais fornecidas (Gasto, Impressões, Cliques, CTR, CPC, Vendas, Leads). " +
+      "Identifique gargalos, oportunidades de escala ou problemas de criativo e responda SOMENTE com um JSON válido no seguinte formato:\n" +
+      JSON.stringify({
+        suggestions: [
+          {
+            id: "sug_1",
+            type: "improvement", // "improvement" | "warning" | "new_campaign" | "opportunity"
+            impact: "high", // "high" | "medium" | "low"
+            title: "Título da recomendação",
+            description: "Explicação técnica e didática do motivo baseado nos dados reais.",
+            metrics: { estimatedImprovement: "+20% ROAS" },
+            action: {
+              type: "increase_budget",
+              description: "Ação prática recomendada para o gestor executar"
+            }
+          }
+        ]
+      }, null, 2);
 
     const res = await fetch(url, {
       method: 'POST',
@@ -43,21 +63,21 @@ export async function POST(request: Request) {
         messages: [
           {
             role: 'system',
-            content: `Você é o AdPilot, um Especialista Senior em Meta Ads. Analise com base em dados reais e responda somente um JSON com { "suggestions": [] }.`
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: JSON.stringify(campaigns.slice(0, 10))
+            content: "Aqui estão as campanhas reais do usuário para análise:\n" + JSON.stringify(campaigns.slice(0, 10))
           }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 2500
       })
     })
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      return NextResponse.json({ error: err?.error?.message || `Erro (${res.status})` }, { status: res.status })
+      return NextResponse.json({ error: err?.error?.message || ("Erro do servidor de IA (" + res.status + ")") }, { status: res.status })
     }
 
     const data = await res.json()
@@ -66,6 +86,7 @@ export async function POST(request: Request) {
     const parsed = JSON.parse(cleaned)
     return NextResponse.json({ suggestions: parsed.suggestions || [] })
   } catch (error) {
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+    console.error('Erro no analyze:', error)
+    return NextResponse.json({ error: 'Erro ao processar análise da IA' }, { status: 500 })
   }
 }

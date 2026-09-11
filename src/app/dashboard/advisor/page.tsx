@@ -321,7 +321,7 @@ export default function AdvisorPage() {
               <p>Você está prestes a aplicar a seguinte recomendação na sua campanha através da API do Facebook (Simulação):</p>
               <div className="p-4 bg-muted rounded-lg text-sm">
                 <strong>{selectedSuggestion.title}</strong>
-                <p className="mt-1 text-muted-foreground">{selectedSuggestion.action.description}</p>
+                <p className="mt-1 text-muted-foreground">{typeof selectedSuggestion.action === 'object' && selectedSuggestion.action?.description ? selectedSuggestion.action.description : String(selectedSuggestion.action || 'Revisar métricas')}</p>
               </div>
               <p className="text-xs text-amber-500 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
@@ -363,7 +363,7 @@ function SuggestionCard({ suggestion, isApplied, onApply }: { suggestion: AiSugg
                 <div className="bg-muted p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="text-sm">
                     <span className="font-semibold text-primary">Ação Recomendada: </span>
-                    {suggestion.action.description}
+                    {typeof suggestion.action === 'object' && suggestion.action?.description ? suggestion.action.description : String(suggestion.action || 'Revisar métricas')}
                   </div>
                   <Button size="sm" onClick={onApply} className="shrink-0">
                     Aplicar Mudança
