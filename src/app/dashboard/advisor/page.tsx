@@ -129,7 +129,7 @@ export default function AdvisorPage() {
     setIsChatLoading(true)
 
     // Contexto extra adicionado de forma invisível para que a IA saiba os dados das campanhas atuais
-    const contextPrompt = \\n\n[CONTEXTO DO SISTEMA INVISÍVEL AO USUÁRIO]: O usuário possui atualmente as seguintes campanhas ativas no Facebook: \\
+    const contextPrompt = '';
 
     try {
       const res = await fetch('/api/ai/chat', {
@@ -202,9 +202,7 @@ export default function AdvisorPage() {
                 <div>
                   <h3 className="font-bold text-lg">Análise Dinâmica</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {realCampaigns.length > 0 
-                      ? \Conectado a \ campanhas reais.\ 
-                      : 'Nenhuma campanha carregada ou Meta Ads não configurado.'}
+                    {realCampaigns.length > 0 ? `Conectado a ${realCampaigns.length} campanhas reais.` : 'Nenhuma campanha carregada ou Meta Ads não configurado.'}
                   </p>
                 </div>
                 <Button 

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -17,17 +17,18 @@ import {
   Rocket,
   LogOut,
   LifeBuoy
-} from 'lucide-react'
+, HelpCircle} from 'lucide-react'
 import { useAuth } from '@/lib/auth-store'
 import { useSettings } from '@/lib/store'
 
 const navItems = [
-  { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'VisÃ£o Geral', icon: LayoutDashboard },
   { href: '/dashboard/campaigns', label: 'Campanhas', icon: Megaphone },
   { href: '/dashboard/advisor', label: 'IA Advisor', icon: Brain },
   { href: '/dashboard/planner', label: 'Planejador', icon: CalendarPlus },
+  { href: '/dashboard/meta-support', label: 'Ajuda & Docs Meta', icon: HelpCircle },
   { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy },
-  { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
+  { href: '/dashboard/settings', label: 'ConfiguraÃ§Ãµes', icon: Settings },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -85,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/')
   }
 
-  const userName = mounted && auth.user ? auth.user.name : 'Usuário'
+  const userName = mounted && auth.user ? auth.user.name : 'UsuÃ¡rio'
   const userInitial = userName.charAt(0).toUpperCase()
 
   if (!mounted || auth.user?.role === 'ADMIN') return null
@@ -203,19 +204,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="bg-card border shadow-2xl rounded-xl p-6 max-w-2xl w-full">
                 <h2 className="text-xl font-bold mb-4">Termos de Uso e Responsabilidade</h2>
                 <div className="bg-muted/50 p-4 rounded-lg border text-sm text-muted-foreground h-64 overflow-y-auto mb-6">
-                  <strong className="block mb-2 text-foreground">Limitações de Responsabilidade e Avisos Importantes (Disclaimer)</strong>
-                  <p className="mb-2">Para garantir a transparência no uso da plataforma, destacamos que o AdPilot é uma ferramenta de software as a service (SaaS) "as is" (no estado em que se encontra) e não atua como agência de marketing ou consultor financeiro.</p>
+                  <strong className="block mb-2 text-foreground">LimitaÃ§Ãµes de Responsabilidade e Avisos Importantes (Disclaimer)</strong>
+                  <p className="mb-2">Para garantir a transparÃªncia no uso da plataforma, destacamos que o AdPilot Ã© uma ferramenta de software as a service (SaaS) "as is" (no estado em que se encontra) e nÃ£o atua como agÃªncia de marketing ou consultor financeiro.</p>
                   <ul className="list-disc pl-4 space-y-2">
-                    <li><strong>Os Resultados Não São Garantidos:</strong> A performance de campanhas de tráfego pago depende de inúmeras variáveis de mercado externas. O AdPilot não garante conversões, alcance mínimo, faturamento (ROAS) ou qualquer tipo de retorno financeiro (ROI).</li>
-                    <li><strong>Revisão Humana Obrigatória:</strong> A inteligência artificial pode gerar informações imprecisas. É responsabilidade única e exclusiva do usuário final (gestor) revisar minuciosamente orçamentos, públicos e textos antes de aprovar e veicular qualquer anúncio gastando dinheiro real.</li>
-                    <li><strong>Integração de Terceiros (APIs):</strong> Mudanças, bugs ou revogações de tokens do Meta/Facebook, OpenAI e Stripe estão fora do nosso controle e eximem o sistema de responsabilidades por interrupções temporárias de serviço.</li>
-                    <li><strong>Alocação de Orçamento:</strong> O usuário é o único responsável pelos orçamentos financeiros vinculados ao seu Cartão de Crédito/Conta de Anúncios.</li>
+                    <li><strong>Os Resultados NÃ£o SÃ£o Garantidos:</strong> A performance de campanhas de trÃ¡fego pago depende de inÃºmeras variÃ¡veis de mercado externas. O AdPilot nÃ£o garante conversÃµes, alcance mÃ­nimo, faturamento (ROAS) ou qualquer tipo de retorno financeiro (ROI).</li>
+                    <li><strong>RevisÃ£o Humana ObrigatÃ³ria:</strong> A inteligÃªncia artificial pode gerar informaÃ§Ãµes imprecisas. Ã‰ responsabilidade Ãºnica e exclusiva do usuÃ¡rio final (gestor) revisar minuciosamente orÃ§amentos, pÃºblicos e textos antes de aprovar e veicular qualquer anÃºncio gastando dinheiro real.</li>
+                    <li><strong>IntegraÃ§Ã£o de Terceiros (APIs):</strong> MudanÃ§as, bugs ou revogaÃ§Ãµes de tokens do Meta/Facebook, OpenAI e Stripe estÃ£o fora do nosso controle e eximem o sistema de responsabilidades por interrupÃ§Ãµes temporÃ¡rias de serviÃ§o.</li>
+                    <li><strong>AlocaÃ§Ã£o de OrÃ§amento:</strong> O usuÃ¡rio Ã© o Ãºnico responsÃ¡vel pelos orÃ§amentos financeiros vinculados ao seu CartÃ£o de CrÃ©dito/Conta de AnÃºncios.</li>
                   </ul>
-                  <p className="mt-4">A plataforma AdPilot é um facilitador de processos (ferramenta-meio), não uma garantidora de lucros (ferramenta-fim).</p>
+                  <p className="mt-4">A plataforma AdPilot Ã© um facilitador de processos (ferramenta-meio), nÃ£o uma garantidora de lucros (ferramenta-fim).</p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                  <p className="text-xs text-muted-foreground max-w-xs">Você deve aceitar os termos para continuar utilizando a plataforma.</p>
+                  <p className="text-xs text-muted-foreground max-w-xs">VocÃª deve aceitar os termos para continuar utilizando a plataforma.</p>
                   <Button 
                     onClick={async () => {
                       const res = await fetch('/api/user/lgpd/accept', {

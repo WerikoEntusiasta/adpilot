@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getChatCompletionsUrl, getAiAuthHeaders } from '@/lib/ai-helpers'
 import { prisma } from '@/lib/prisma'
 
@@ -30,25 +30,21 @@ export async function POST(request: Request) {
         messages: [
           { 
             role: 'system', 
-            content: \Você é o AdPilot AI, um Especialista Senior em Tráfego Pago (Meta Ads) e Mídia Programática. 
-Sua missão é ajudar o usuário respondendo suas dúvidas de forma direta, técnica, porém didática (explique o raciocínio por trás de cada estratégia para que até um iniciante entenda).
-- Sempre baseie-se nas ÚLTIMAS atualizações do Facebook Ads (como as campanhas Advantage+ Shopping, orçamentos automáticos, pixel de conversão avançado).
-- Quando o usuário enviar o contexto atual de campanhas dele na última mensagem, utilize ESSES DADOS REAIS para basear sua resposta. NUNCA invente campanhas fictícias.
-- Responda apenas o que for perguntado. Evite mensagens demasiadamente longas, a menos que seja solicitado.\
+            content: 'Você é o AdPilot AI, Especialista Senior em Meta Ads. Seja técnico, resolutivo e didático.'
           },
           ...messages
-        ],
-      }),
+        ]
+      })
     })
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      return NextResponse.json({ error: err?.error?.message || \Erro do servidor de IA (\)\ }, { status: res.status })
+      return NextResponse.json({ error: err?.error?.message || `Erro (${res.status})` }, { status: res.status })
     }
 
     const data = await res.json()
     return NextResponse.json({ reply: data.choices?.[0]?.message?.content || '' })
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Erro ao comunicar com a IA' }, { status: 500 })
+    return NextResponse.json({ error: 'Erro ao comunicar com a IA' }, { status: 500 })
   }
 }

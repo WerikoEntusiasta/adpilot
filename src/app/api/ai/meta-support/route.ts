@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
-    const { campaigns, endpoint, apiKey, model } = await request.json()
+    const { messages, endpoint, apiKey, model } = await request.json()
 
     let dbSettings = null
     if (!apiKey || apiKey === 'ENV_CONFIGURED' || !endpoint) {
@@ -19,19 +19,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'IA não configurada via painel ou .env' }, { status: 400 })
     }
 
-    if (!campaigns || campaigns.length === 0) {
-      return NextResponse.json({
-        suggestions: [{
-          id: 'no-data',
-          type: 'warning',
-          impact: 'high',
-          title: 'Nenhuma campanha detectada',
-          description: 'A IA identificou que não há campanhas ativas reais conectadas na conta.',
-          action: { type: 'pause', description: 'Conecte sua conta do Facebook Ads.' }
-        }]
-      })
-    }
-
     const url = getChatCompletionsUrl(finalEndpoint)
     const headers = getAiAuthHeaders(finalApiKey, finalEndpoint)
 
@@ -41,17 +28,12 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: finalModel,
         messages: [
-          {
-            role: 'system',
-            content: `Você é o AdPilot, um Especialista Senior em Meta Ads. Analise com base em dados reais e responda somente um JSON com { "suggestions": [] }.`
+          { 
+            role: 'system', 
+            content: 'Você é o Suporte Oficial Técnico da Meta Ads. Responda exclusivamente com base nas documentações oficiais da Meta.'
           },
-          {
-            role: 'user',
-            content: JSON.stringify(campaigns.slice(0, 10))
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000
+          ...messages
+        ]
       })
     })
 
@@ -61,11 +43,8 @@ export async function POST(request: Request) {
     }
 
     const data = await res.json()
-    const content = data.choices?.[0]?.message?.content || ''
-    const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const parsed = JSON.parse(cleaned)
-    return NextResponse.json({ suggestions: parsed.suggestions || [] })
+    return NextResponse.json({ reply: data.choices?.[0]?.message?.content || '' })
   } catch (error) {
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+    return NextResponse.json({ error: 'Erro ao comunicar com a IA' }, { status: 500 })
   }
 }

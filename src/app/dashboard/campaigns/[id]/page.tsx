@@ -5,11 +5,11 @@ import { KpiCard } from '@/components/dashboard/kpi-card'
 import { PerformanceChart } from '@/components/dashboard/performance-chart'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
-import { ArrowLeft, DollarSign, Eye, MousePointer, Target, TrendingUp, Calendar, Pause, Play, Loader2 } from 'lucide-react'
+import { ArrowLeft, DollarSign, Eye, MousePointer, Target, TrendingUp, Calendar, Pause, Play, Loader2, Layers, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
-import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
 import { useSettings } from '@/lib/store'
 
 const statusConfig: Record<string, { label: string; variant: 'success' | 'warning' | 'secondary' }> = {
@@ -18,23 +18,15 @@ const statusConfig: Record<string, { label: string; variant: 'success' | 'warnin
   ARCHIVED: { label: 'Arquivada', variant: 'secondary' },
 }
 
-const objectiveLabels: Record<string, string> = {
-  OUTCOME_TRAFFIC: 'Tráfego',
-  OUTCOME_SALES: 'Vendas',
-  OUTCOME_AWARENESS: 'Alcance',
-  OUTCOME_LEADS: 'Leads',
-  OUTCOME_ENGAGEMENT: 'Engajamento',
-}
-
 export default function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const settings = useSettings()
   const [mounted, setMounted] = useState(false)
   const [campaign, setCampaign] = useState<any>(null)
   const [dailyMetrics, setDailyMetrics] = useState<any[]>([])
+  const [adSets, setAdSets] = useState<any[]>([])
+  const [ads, setAds] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [status, setStatus] = useState<string>('')
 
   useEffect(() => {
     setMounted(true)
@@ -43,7 +35,9 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
   useEffect(() => {
     if (mounted && settings.hasFbKeys()) {
       setIsLoading(true)
-      fetch('/api/facebook/campaigns', {
+
+      // 1. Buscar visão geral da campanha
+      const fetchGeneral = fetch('/api/facebook/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -52,29 +46,46 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
           useAdminToken: settings.useAdminFbToken
         })
       })
-      .then(res => res.json())
+      .then(r => r.json())
       .then(data => {
         if (data.campaigns) {
           const found = data.campaigns.find((c: any) => c.id === id)
           setCampaign(found)
-          if (found) setStatus(found.status)
         }
         if (data.dailyMetrics) {
           setDailyMetrics(data.dailyMetrics)
         }
       })
-      .catch(e => console.error(e))
-      .finally(() => setIsLoading(false))
+
+      // 2. Buscar AdSets e Criativos aprofundados
+      const fetchDeep = fetch(`/api/facebook/campaigns/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: settings.fbAccessToken,
+          adAccountId: settings.fbAdAccountId,
+          useAdminToken: settings.useAdminFbToken
+        })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.adSets) setAdSets(data.adSets)
+        if (data.ads) setAds(data.ads)
+      })
+
+      Promise.all([fetchGeneral, fetchDeep])
+        .catch(console.error)
+        .finally(() => setIsLoading(false))
     } else if (mounted) {
       setIsLoading(false)
     }
   }, [mounted, id, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken])
 
-
   if (!mounted || isLoading) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Carregando dados da campanha, conjuntos e criativos...</p>
       </div>
     )
   }
@@ -102,92 +113,181 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
               </Link>
             </Button>
             <h1 className="text-2xl font-bold">{campaign.name}</h1>
-            <Badge variant={statusConfig[status || campaign.status]?.variant || 'secondary'}>
-              {statusConfig[status || campaign.status]?.label || (status || campaign.status)}
+            <Badge variant={statusConfig[campaign.status]?.variant || 'secondary'}>
+              {statusConfig[campaign.status]?.label || campaign.status}
             </Badge>
           </div>
           <div className="flex items-center gap-4 ml-12 text-sm text-muted-foreground">
-            <span>{objectiveLabels[campaign.objective] || campaign.objective}</span>
+            <span>{campaign.objective}</span>
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               Início: {campaign.startDate}
             </span>
-            {campaign.endDate && <span>Fim: {campaign.endDate}</span>}
           </div>
         </div>
-        {status !== 'ARCHIVED' && (
-          <Button
-            variant={status === 'ACTIVE' ? 'outline' : 'default'}
-            onClick={() => setShowConfirm(true)}
-          >
-            {status === 'ACTIVE' ? (
-              <><Pause className="h-4 w-4 mr-2" /> Pausar</>            
-            ) : (
-              <><Play className="h-4 w-4 mr-2" /> Ativar</>            
-            )}
-          </Button>
-        )}
       </div>
 
-      {/* KPIs */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <KpiCard title="Gasto Total" value={formatCurrency(campaign.spend)} icon={DollarSign} />
-        <KpiCard title="Impressões" value={formatNumber(campaign.impressions)} icon={Eye} />
-        <KpiCard title="Cliques" value={formatNumber(campaign.clicks)} icon={MousePointer} />
-        <KpiCard title="CTR" value={formatPercent(campaign.ctr)} icon={TrendingUp} />
-        <KpiCard title="Resultados" value={formatNumber(campaign.conversions)} icon={Target} />
-      </div>
+      {/* Tabs */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="bg-muted/60 p-1">
+          <TabsTrigger value="overview" className="gap-2">
+            <Target className="h-4 w-4" /> Visão Geral
+          </TabsTrigger>
+          <TabsTrigger value="adsets" className="gap-2">
+            <Layers className="h-4 w-4" /> Conjuntos de Anúncios ({adSets.length})
+          </TabsTrigger>
+          <TabsTrigger value="ads" className="gap-2">
+            <ImageIcon className="h-4 w-4" /> Anúncios & Criativos ({ads.length})
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Details Card */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Detalhes da Campanha</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between"><span className="text-muted-foreground">Orçamento diário</span><span className="font-medium">{formatCurrency(campaign.dailyBudget)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">CPC Médio</span><span className="font-medium">{formatCurrency(campaign.cpc)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">CPA</span><span className="font-medium">{campaign.cpa > 0 ? formatCurrency(campaign.cpa) : '—'}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">ROAS</span><span className="font-medium">{campaign.roas > 0 ? \\x\ : '—'}</span></div>
-          </CardContent>
-        </Card>
+        {/* TAB 1: VISÃO GERAL */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <KpiCard title="Gasto Total" value={formatCurrency(campaign.spend)} icon={DollarSign} />
+            <KpiCard title="Vendas (Site)" value={formatNumber(campaign.purchases || 0)} icon={Target} />
+            <KpiCard title="Leads (WhatsApp)" value={formatNumber(campaign.messages || 0)} icon={MousePointer} />
+            <KpiCard title="ROAS" value={campaign.roas > 0 ? `${campaign.roas.toFixed(2)}x` : "—"} icon={TrendingUp} />
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Dica Rápida de Otimização</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 text-sm">
-              <div className="p-3 rounded-lg bg-primary/10 text-primary">
-                ✨ Quer análises profundas desta campanha? Vá para a aba <strong>AI Advisor</strong> e peça para a nossa Inteligência Artificial ler estes dados e propor estratégias focadas em redução de CPA e escala!
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <KpiCard title="Impressões" value={formatNumber(campaign.impressions)} icon={Eye} />
+            <KpiCard title="Cliques no Link" value={formatNumber(campaign.clicks)} icon={MousePointer} />
+            <KpiCard title="CTR Médio" value={formatPercent(campaign.ctr)} icon={TrendingUp} />
+          </div>
 
-      {/* Chart */}
-      {dailyMetrics.length > 0 && (
-        <PerformanceChart data={dailyMetrics} />
-      )}
+          {dailyMetrics.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance ao Longo do Tempo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PerformanceChart data={dailyMetrics} />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-      {/* Confirm Dialog */}
-      <ConfirmationDialog
-        open={showConfirm}
-        onOpenChange={setShowConfirm}
-        title={status === 'ACTIVE' ? 'Pausar Campanha' : 'Ativar Campanha'}
-        description={status === 'ACTIVE'
-          ? \Ao pausar "\", os anúncios deixarão de ser veiculados imediatamente.\
-          : \Ao ativar "\", os anúncios começarão a ser veiculados e o orçamento diário de \ será consumido.\
-        }
-        variant={status === 'ACTIVE' ? 'warning' : 'default'}
-        confirmLabel={status === 'ACTIVE' ? 'Pausar Campanha' : 'Ativar Campanha'}
-        onConfirm={() => {
-          setStatus(s => s === 'ACTIVE' ? 'PAUSED' : 'ACTIVE')
-          // Aqui no futuro chamaria a API real do Facebook para alterar status
-          alert('API Demo: Status atualizado localmente com sucesso!')
-        }}
-      />
+        {/* TAB 2: CONJUNTOS DE ANÚNCIOS */}
+        <TabsContent value="adsets">
+          <Card>
+            <CardHeader>
+              <CardTitle>Conjuntos de Anúncios</CardTitle>
+              <CardDescription>Performance detalhada de cada público/conjunto desta campanha</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {adSets.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">Nenhum conjunto de anúncio encontrado.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-muted-foreground">
+                        <th className="pb-3 pr-4">Nome do Conjunto</th>
+                        <th className="pb-3 pr-4">Status</th>
+                        <th className="pb-3 pr-4">Orçamento</th>
+                        <th className="pb-3 pr-4">Gasto</th>
+                        <th className="pb-3 pr-4">Vendas (Site)</th>
+                        <th className="pb-3 pr-4">Leads (Whats)</th>
+                        <th className="pb-3 pr-4">CTR</th>
+                        <th className="pb-3">CPC</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adSets.map(as => (
+                        <tr key={as.id} className="border-b last:border-0 hover:bg-muted/50">
+                          <td className="py-3 pr-4 font-medium">{as.name}</td>
+                          <td className="py-3 pr-4">
+                            <Badge variant={statusConfig[as.status]?.variant || 'secondary'}>
+                              {statusConfig[as.status]?.label || as.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 pr-4">{as.dailyBudget > 0 ? formatCurrency(as.dailyBudget) : 'CBO'}</td>
+                          <td className="py-3 pr-4 font-mono">{formatCurrency(as.spend)}</td>
+                          <td className="py-3 pr-4 font-mono font-semibold text-emerald-400">{as.salesCount}</td>
+                          <td className="py-3 pr-4 font-mono font-semibold text-blue-400">{as.leadsCount}</td>
+                          <td className="py-3 pr-4 font-mono">{formatPercent(as.ctr)}</td>
+                          <td className="py-3 font-mono">{formatCurrency(as.cpc)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 3: ANÚNCIOS & CRIATIVOS */}
+        <TabsContent value="ads">
+          <Card>
+            <CardHeader>
+              <CardTitle>Criativos & Anúncios</CardTitle>
+              <CardDescription>Métricas individuais de cada criativo rodando no Facebook Ads</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {ads.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">Nenhum anúncio encontrado.</p>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {ads.map(ad => (
+                    <Card key={ad.id} className="overflow-hidden border bg-card/60 flex flex-col">
+                      <div className="aspect-video bg-muted relative flex items-center justify-center border-b">
+                        {ad.creative?.image_url || ad.creative?.thumbnail_url ? (
+                          <img 
+                            src={ad.creative.image_url || ad.creative.thumbnail_url} 
+                            alt={ad.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <div className="text-muted-foreground flex flex-col items-center gap-1">
+                            <ImageIcon className="h-8 w-8 opacity-40" />
+                            <span className="text-xs">Sem miniatura disponível</span>
+                          </div>
+                        )}
+                        <Badge variant={statusConfig[ad.status]?.variant || 'secondary'} className="absolute top-2 right-2 shadow">
+                          {statusConfig[ad.status]?.label || ad.status}
+                        </Badge>
+                      </div>
+
+                      <CardContent className="p-4 flex-1 space-y-3">
+                        <h4 className="font-semibold text-sm line-clamp-1" title={ad.name}>{ad.name}</h4>
+                        
+                        <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t">
+                          <div>
+                            <span className="text-muted-foreground">Gasto:</span>
+                            <p className="font-mono font-medium">{formatCurrency(ad.spend)}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Cliques:</span>
+                            <p className="font-mono font-medium">{formatNumber(ad.clicks)}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Vendas (Site):</span>
+                            <p className="font-mono font-bold text-emerald-400">{ad.salesCount}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Leads (Whats):</span>
+                            <p className="font-mono font-bold text-blue-400">{ad.leadsCount}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">CTR:</span>
+                            <p className="font-mono">{formatPercent(ad.ctr)}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">CPC:</span>
+                            <p className="font-mono">{formatCurrency(ad.cpc)}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

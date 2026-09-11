@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
@@ -69,10 +69,10 @@ interface GeneratedPlan {
 }
 
 const steps = [
-  { id: 1, title: 'Briefing com IA', icon: Brain, description: 'Conte à IA o que você deseja promover' },
-  { id: 2, title: 'Plano da IA', icon: Sparkles, description: 'IA planeja objetivo, público, orçamento e cópias' },
-  { id: 3, title: 'Criativos & Mídia', icon: Upload, description: 'Faça upload das imagens/vídeos dos anúncios' },
-  { id: 4, title: 'Revisão & Aprovação', icon: Rocket, description: 'Confirme todos os detalhes antes de criar' },
+  { id: 1, title: 'Briefing com IA', icon: Brain, description: 'Conte Ã  IA o que vocÃª deseja promover' },
+  { id: 2, title: 'Plano da IA', icon: Sparkles, description: 'IA planeja objetivo, pÃºblico, orÃ§amento e cÃ³pias' },
+  { id: 3, title: 'Criativos & MÃ­dia', icon: Upload, description: 'FaÃ§a upload das imagens/vÃ­deos dos anÃºncios' },
+  { id: 4, title: 'RevisÃ£o & AprovaÃ§Ã£o', icon: Rocket, description: 'Confirme todos os detalhes antes de criar' },
 ]
 
 export default function PlannerPage() {
@@ -107,9 +107,9 @@ export default function PlannerPage() {
       // Demo fallback plan if no AI key configured
       setTimeout(() => {
         const demoPlan: GeneratedPlan = {
-          campaignName: 'Lançamento ' + (briefing.slice(0, 20) || 'Produto Exclusivo'),
+          campaignName: 'LanÃ§amento ' + (briefing.slice(0, 20) || 'Produto Exclusivo'),
           objective: 'OUTCOME_SALES',
-          objectiveReason: 'Foco total em conversões diretas e ROI elevado.',
+          objectiveReason: 'Foco total em conversÃµes diretas e ROI elevado.',
           targeting: {
             ageMin: 22,
             ageMax: 50,
@@ -125,24 +125,24 @@ export default function PlannerPage() {
           },
           ads: [
             {
-              name: 'Anúncio 1 - Oferta Principal',
-              headline: '🔥 Garanta o Seu com 30% OFF Hoje',
-              primaryText: 'Transforme seus resultados com a solução número 1 do mercado. Milhares de clientes já aprovaram. Frete grátis para todo o Brasil.',
-              description: 'Oferta válida por tempo limitado',
+              name: 'AnÃºncio 1 - Oferta Principal',
+              headline: 'ðŸ”¥ Garanta o Seu com 30% OFF Hoje',
+              primaryText: 'Transforme seus resultados com a soluÃ§Ã£o nÃºmero 1 do mercado. Milhares de clientes jÃ¡ aprovaram. Frete grÃ¡tis para todo o Brasil.',
+              description: 'Oferta vÃ¡lida por tempo limitado',
               cta: 'SHOP_NOW',
             },
             {
-              name: 'Anúncio 2 - Depoimento/Prova Social',
-              headline: '⭐ Veja Por Que Todos Estão Usando',
-              primaryText: 'Descubra como clientes estão revolucionando sua rotina. Resultados rápidos e garantia incondicional de 30 dias.',
+              name: 'AnÃºncio 2 - Depoimento/Prova Social',
+              headline: 'â­ Veja Por Que Todos EstÃ£o Usando',
+              primaryText: 'Descubra como clientes estÃ£o revolucionando sua rotina. Resultados rÃ¡pidos e garantia incondicional de 30 dias.',
               description: 'Clique e confira os depoimentos',
               cta: 'LEARN_MORE',
             },
           ],
-          strategy: 'Estratégia focada em atração com anúncio de oferta direta e retargeting com prova social. Público amplo inicial com afunilamento semanal.',
+          strategy: 'EstratÃ©gia focada em atraÃ§Ã£o com anÃºncio de oferta direta e retargeting com prova social. PÃºblico amplo inicial com afunilamento semanal.',
           tips: [
             'Utilize imagens com contraste alto para destacar o produto no feed.',
-            'Adicione vídeos de unboxing ou demonstração rápida para o segundo anúncio.',
+            'Adicione vÃ­deos de unboxing ou demonstraÃ§Ã£o rÃ¡pida para o segundo anÃºncio.',
           ],
         }
         setPlan(demoPlan)
@@ -171,6 +171,7 @@ export default function PlannerPage() {
           endpoint: settings.aiEndpoint,
           apiKey: settings.aiApiKey,
           model: settings.aiModel,
+          fbAccessToken: settings.fbAccessToken,
         }),
       })
 
@@ -195,7 +196,7 @@ export default function PlannerPage() {
       )
       setCurrentStep(2)
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Erro de conexão')
+      setErrorMsg(err instanceof Error ? err.message : 'Erro de conexÃ£o')
     }
     setIsGenerating(false)
   }
@@ -213,13 +214,13 @@ export default function PlannerPage() {
     setShowConfirmDialog(false)
     setIsCreating(true)
     setCreationProgress(10)
-    setCreationStatus('Iniciando comunicação com Facebook Marketing API...')
+    setCreationStatus('Iniciando comunicaÃ§Ã£o com Facebook Marketing API...')
 
     const stepsList = [
       { p: 30, text: 'Criando estrutura da campanha no Facebook Ads...' },
-      { p: 60, text: 'Configurando conjunto de anúncios e público-alvo...' },
-      { p: 80, text: 'Fazendo upload dos criativos e mídias...' },
-      { p: 95, text: 'Vinculando cópias, headlines e CTAs...' },
+      { p: 60, text: 'Configurando conjunto de anÃºncios e pÃºblico-alvo...' },
+      { p: 80, text: 'Fazendo upload dos criativos e mÃ­dias...' },
+      { p: 95, text: 'Vinculando cÃ³pias, headlines e CTAs...' },
       { p: 100, text: 'Campanha criada com sucesso!' },
     ]
 
@@ -242,9 +243,9 @@ export default function PlannerPage() {
           <CheckCircle2 className="h-12 w-12" />
         </div>
         <div className="text-center space-y-2 max-w-md">
-          <h2 className="text-3xl font-bold">Campanha Criada com Sucesso! 🚀</h2>
+          <h2 className="text-3xl font-bold">Campanha Criada com Sucesso! ðŸš€</h2>
           <p className="text-muted-foreground">
-            A IA criou sua campanha <strong>"{plan?.campaignName}"</strong> com status <strong>PAUSADO</strong>. Você pode revisá-la ou ativá-la quando quiser no dashboard.
+            A IA criou sua campanha <strong>"{plan?.campaignName}"</strong> com status <strong>PAUSADO</strong>. VocÃª pode revisÃ¡-la ou ativÃ¡-la quando quiser no dashboard.
           </p>
         </div>
         <div className="flex gap-4 pt-4">
@@ -273,16 +274,26 @@ export default function PlannerPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <CalendarPlus className="h-8 w-8 text-primary" />
-          Planejador Autônomo com IA
+          Planejador AutÃ´nomo com IA
         </h1>
         <p className="text-muted-foreground mt-1">
-          Forneça a ideia do seu anúncio. A IA planeja o público, orçamento e anúncios, você sobe as mídias e a IA executa a criação com 1 clique.
+          ForneÃ§a a ideia do seu anÃºncio. A IA planeja o pÃºblico, orÃ§amento e anÃºncios, vocÃª sobe as mÃ­dias e a IA executa a criaÃ§Ã£o com 1 clique.
         </p>
       </div>
 
       {/* Progress Bar & Steps */}
       <div className="space-y-4">
-        <Progress value={(currentStep / steps.length) * 100} className="h-2" />
+              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-start gap-3 text-sm text-blue-400">
+        <Target className="h-5 w-5 shrink-0 mt-0.5" />
+        <div>
+          <p className="font-semibold text-foreground">Ambiente de Planejamento Estratégico</p>
+          <p className="text-muted-foreground mt-0.5">
+            Este módulo serve exclusivamente para projetar sua campanha, sugerir orçamentos e validar públicos reais existentes na Meta. Nenhuma campanha será publicada automaticamente no Facebook Ads sem sua ação manual no Gerenciador.
+          </p>
+        </div>
+      </div>
+
+      <Progress value={(currentStep / steps.length) * 100} className="h-2" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {steps.map((step) => {
             const Icon = step.icon
@@ -323,15 +334,15 @@ export default function PlannerPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-primary" />
-              Descreva o seu produto ou serviço
+              Descreva o seu produto ou serviÃ§o
             </CardTitle>
             <CardDescription>
-              Explique o que você quer vender/promover, quem é o seu público ideal e o seu objetivo. A IA criará todo o planejamento estratégico.
+              Explique o que vocÃª quer vender/promover, quem Ã© o seu pÃºblico ideal e o seu objetivo. A IA criarÃ¡ todo o planejamento estratÃ©gico.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
-              placeholder="Ex: Quero vender um curso online de inglês focado em negócios para profissionais de tecnologia do Brasil. Meu orçamento é de R$ 100/dia e quero focar em vendas diretas na landing page."
+              placeholder="Ex: Quero vender um curso online de inglÃªs focado em negÃ³cios para profissionais de tecnologia do Brasil. Meu orÃ§amento Ã© de R$ 100/dia e quero focar em vendas diretas na landing page."
               value={briefing}
               onChange={(e) => setBriefing(e.target.value)}
               className="min-h-[160px] text-base"
@@ -341,7 +352,7 @@ export default function PlannerPage() {
             )}
             {!settings.hasAiKeys() && (
               <p className="text-xs text-amber-400 bg-amber-500/10 p-3 rounded-md border border-amber-500/20">
-                💡 Modo Demo: A IA usará um plano simulado. Configure sua API key em <strong>Configurações</strong> para planos personalizados com GPT.
+                ðŸ’¡ Modo Demo: A IA usarÃ¡ um plano simulado. Configure sua API key em <strong>ConfiguraÃ§Ãµes</strong> para planos personalizados com GPT.
               </p>
             )}
           </CardContent>
@@ -358,7 +369,7 @@ export default function PlannerPage() {
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-5 w-5" /> Gerar Plano Estratégico
+                  <Sparkles className="h-5 w-5" /> Gerar Plano EstratÃ©gico
                 </>
               )}
             </Button>
@@ -396,7 +407,7 @@ export default function PlannerPage() {
 
                 <div className="p-4 rounded-lg bg-muted border space-y-1">
                   <span className="text-xs text-muted-foreground font-semibold uppercase flex items-center gap-1">
-                    <Users className="h-4 w-4 text-primary" /> Público Alvo
+                    <Users className="h-4 w-4 text-primary" /> PÃºblico Alvo
                   </span>
                   <p className="font-bold text-base">{plan.targeting.locations} ({plan.targeting.ageMin}-{plan.targeting.ageMax} anos)</p>
                   <div className="flex flex-wrap gap-1 pt-1">
@@ -408,10 +419,10 @@ export default function PlannerPage() {
 
                 <div className="p-4 rounded-lg bg-muted border space-y-1">
                   <span className="text-xs text-muted-foreground font-semibold uppercase flex items-center gap-1">
-                    <DollarSign className="h-4 w-4 text-primary" /> Orçamento & Duração
+                    <DollarSign className="h-4 w-4 text-primary" /> OrÃ§amento & DuraÃ§Ã£o
                   </span>
                   <p className="font-bold text-xl">{formatCurrency(plan.budget.amount)} / {plan.budget.type === 'daily' ? 'dia' : 'total'}</p>
-                  <p className="text-xs text-muted-foreground">Duração estimada: {plan.budget.duration} dias</p>
+                  <p className="text-xs text-muted-foreground">DuraÃ§Ã£o estimada: {plan.budget.duration} dias</p>
                   <p className="text-xs text-muted-foreground pt-1">{plan.budget.reason}</p>
                 </div>
               </div>
@@ -422,7 +433,7 @@ export default function PlannerPage() {
               <div className="space-y-4">
                 <h3 className="font-bold text-lg flex items-center gap-2">
                   <ImageIcon className="h-5 w-5 text-primary" />
-                  Anúncios e Cópias Planejadas pela IA ({plan.ads.length})
+                  AnÃºncios e CÃ³pias Planejadas pela IA ({plan.ads.length})
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   {plan.ads.map((ad, idx) => (
@@ -435,7 +446,7 @@ export default function PlannerPage() {
                       </CardHeader>
                       <CardContent className="p-4 space-y-3 text-sm">
                         <div>
-                          <span className="text-xs text-muted-foreground font-medium">Headline (Título):</span>
+                          <span className="text-xs text-muted-foreground font-medium">Headline (TÃ­tulo):</span>
                           <p className="font-bold text-primary">{ad.headline}</p>
                         </div>
                         <div>
@@ -453,7 +464,7 @@ export default function PlannerPage() {
                 <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
               </Button>
               <Button onClick={() => setCurrentStep(3)}>
-                Avançar para Upload de Criativos <ArrowRight className="h-4 w-4 ml-2" />
+                AvanÃ§ar para Upload de Criativos <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardFooter>
           </Card>
@@ -466,10 +477,10 @@ export default function PlannerPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5 text-primary" />
-              Upload dos Criativos dos Anúncios
+              Upload dos Criativos dos AnÃºncios
             </CardTitle>
             <CardDescription>
-              Faça upload das imagens ou vídeos correspondentes aos anúncios planejados pela IA.
+              FaÃ§a upload das imagens ou vÃ­deos correspondentes aos anÃºncios planejados pela IA.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -478,7 +489,7 @@ export default function PlannerPage() {
                 <div key={index} className="p-4 border rounded-xl space-y-4 bg-card">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-sm">{creative.name}</span>
-                    <Badge variant="secondary">Anúncio {index + 1}</Badge>
+                    <Badge variant="secondary">AnÃºncio {index + 1}</Badge>
                   </div>
                   <div className="space-y-1 text-xs text-muted-foreground">
                     <p><strong>Headline:</strong> {creative.headline}</p>
@@ -516,7 +527,7 @@ export default function PlannerPage() {
                         <div className="text-xs">
                           <span className="text-primary font-bold">Clique para upload</span> ou arraste o arquivo
                         </div>
-                        <p className="text-[10px] text-muted-foreground">PNG, JPG, MP4 até 50MB</p>
+                        <p className="text-[10px] text-muted-foreground">PNG, JPG, MP4 atÃ© 50MB</p>
                         <input
                           type="file"
                           accept="image/*,video/*"
@@ -549,10 +560,10 @@ export default function PlannerPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Rocket className="h-5 w-5 text-primary" />
-              Revisão Final antes de subir no Facebook Ads
+              RevisÃ£o Final antes de subir no Facebook Ads
             </CardTitle>
             <CardDescription>
-              Tudo pronto! Confirme os dados abaixo para a IA executar a criação completa via API.
+              Tudo pronto! Confirme os dados abaixo para a IA executar a criaÃ§Ã£o completa via API.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -560,17 +571,17 @@ export default function PlannerPage() {
               <div className="p-4 rounded-lg bg-muted space-y-2">
                 <p className="font-bold">{plan.campaignName}</p>
                 <p className="text-xs text-muted-foreground">Objetivo: {plan.objective}</p>
-                <p className="text-xs text-muted-foreground">Orçamento: {formatCurrency(plan.budget.amount)}/dia</p>
-                <p className="text-xs text-muted-foreground">Público: {plan.targeting.locations} ({plan.targeting.ageMin}-{plan.targeting.ageMax} anos)</p>
+                <p className="text-xs text-muted-foreground">OrÃ§amento: {formatCurrency(plan.budget.amount)}/dia</p>
+                <p className="text-xs text-muted-foreground">PÃºblico: {plan.targeting.locations} ({plan.targeting.ageMin}-{plan.targeting.ageMax} anos)</p>
               </div>
 
               <div className="p-4 rounded-lg bg-muted space-y-2">
-                <p className="font-bold">Anúncios & Mídias</p>
+                <p className="font-bold">AnÃºncios & MÃ­dias</p>
                 {creatives.map((c, i) => (
                   <div key={i} className="flex justify-between items-center text-xs">
                     <span>{c.name}</span>
                     <Badge variant={c.previewUrl ? 'success' : 'outline'}>
-                      {c.previewUrl ? '✓ Imagem Carregada' : 'Sem imagem (padrão)'}
+                      {c.previewUrl ? 'âœ“ Imagem Carregada' : 'Sem imagem (padrÃ£o)'}
                     </Badge>
                   </div>
                 ))}
@@ -595,7 +606,7 @@ export default function PlannerPage() {
               onClick={() => setShowConfirmDialog(true)}
               disabled={isCreating}
             >
-              <Rocket className="h-5 w-5" /> Criar Campanha Agora
+              <Rocket className="h-5 w-5" /> Concluir Planejamento
             </Button>
           </CardFooter>
         </Card>
@@ -605,11 +616,11 @@ export default function PlannerPage() {
       <ConfirmationDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
-        title="Confirmar Criação de Campanha"
-        description={`Você está prestes a criar a campanha "${plan?.campaignName}" na sua conta do Facebook Ads. A campanha será criada com status PAUSADA para sua total segurança.`}
+        title="Confirmar CriaÃ§Ã£o de Campanha"
+        description={`VocÃª estÃ¡ prestes a criar a campanha "${plan?.campaignName}" na sua conta do Facebook Ads. A campanha serÃ¡ criada com status PAUSADA para sua total seguranÃ§a.`}
         variant="warning"
         confirmLabel="Sim, Criar Campanha"
-        requireCheckbox="Confirmo que revisei a cópia, orçamento e mídias da campanha"
+        requireCheckbox="Confirmo que revisei a cÃ³pia, orÃ§amento e mÃ­dias da campanha"
         onConfirm={handleExecuteCreation}
       />
     </div>
