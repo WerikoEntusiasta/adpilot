@@ -129,17 +129,15 @@ export default function AdvisorPage() {
     setIsChatLoading(true)
 
     // Contexto extra adicionado de forma invisível para que a IA saiba os dados das campanhas atuais
-    const contextPrompt = '';
+    
 
     try {
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [
-            ...newMessages.slice(0, -1),
-            { role: 'user', content: newMessages[newMessages.length - 1].content + contextPrompt },
-          ],
+          messages: newMessages,
+          campaigns: realCampaigns,
           endpoint: settings.aiEndpoint,
           apiKey: settings.aiApiKey,
           model: settings.aiModel,
