@@ -312,26 +312,13 @@ export default function AdvisorPage() {
       {/* Dialog de Confirmação de Ação */}
       {selectedSuggestion && (
         <ConfirmationDialog
-          isOpen={true}
-          onClose={() => setSelectedSuggestion(null)}
-          onConfirm={() => handleApply(selectedSuggestion.id)}
+          open={!!selectedSuggestion}
+          onOpenChange={(o) => !o && setSelectedSuggestion(null)}
           title="Aplicar Recomendação"
-          description={
-            <div className="space-y-4 mt-4">
-              <p>Você está prestes a aplicar a seguinte recomendação na sua campanha através da API do Facebook (Simulação):</p>
-              <div className="p-4 bg-muted rounded-lg text-sm">
-                <strong>{selectedSuggestion.title}</strong>
-                <p className="mt-1 text-muted-foreground">{typeof selectedSuggestion.action === 'object' && selectedSuggestion.action?.description ? selectedSuggestion.action.description : String(selectedSuggestion.action || 'Revisar métricas')}</p>
-              </div>
-              <p className="text-xs text-amber-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                Atenção: Mudanças de orçamento podem resetar o aprendizado da campanha.
-              </p>
-            </div>
-          }
-          confirmText="Sim, Aplicar Mudança"
-          cancelText="Cancelar"
-          variant="default"
+          description={selectedSuggestion ? ("Deseja aplicar esta recomendação: " + selectedSuggestion.title) : ""}
+          confirmLabel="Sim, Aplicar Mudança"
+          cancelLabel="Cancelar"
+          onConfirm={() => selectedSuggestion && handleApply(selectedSuggestion.id)}
         />
       )}
     </div>

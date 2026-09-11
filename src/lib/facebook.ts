@@ -121,7 +121,7 @@ export async function getAdsByCampaign(campaignId: string, config: FacebookConfi
     '/' + campaignId + '/ads',
     config,
     {
-      fields: 'id,name,status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url}',
+      fields: 'id,name,status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
       limit: '100',
     }
   )
@@ -129,7 +129,7 @@ export async function getAdsByCampaign(campaignId: string, config: FacebookConfi
 }
 
 // Buscar Insights a nível de AdSet
-export async function getAdSetInsights(campaignId: string, config: FacebookConfig, datePreset: string = 'last_30d'): Promise<FacebookInsight[]> {
+export async function getAdSetInsights(campaignId: string, config: FacebookConfig, datePreset: string = 'maximum'): Promise<FacebookInsight[]> {
   const result = await fbFetch<{ data: FacebookInsight[] }>(
     '/' + campaignId + '/insights',
     config,
@@ -144,7 +144,7 @@ export async function getAdSetInsights(campaignId: string, config: FacebookConfi
 }
 
 // Buscar Insights a nível de Ad (Anúncio)
-export async function getAdInsights(campaignId: string, config: FacebookConfig, datePreset: string = 'last_30d'): Promise<FacebookInsight[]> {
+export async function getAdInsights(campaignId: string, config: FacebookConfig, datePreset: string = 'maximum'): Promise<FacebookInsight[]> {
   const result = await fbFetch<{ data: FacebookInsight[] }>(
     '/' + campaignId + '/insights',
     config,
@@ -161,7 +161,7 @@ export async function getAdInsights(campaignId: string, config: FacebookConfig, 
 // Buscar insights das campanhas
 export async function getCampaignInsights(
   config: FacebookConfig,
-  datePreset: string = 'last_30d'
+  datePreset: string = 'maximum'
 ): Promise<FacebookInsight[]> {
   const accountId = normalizeAdAccountId(config.adAccountId)
   const result = await fbFetch<{ data: FacebookInsight[] }>(
@@ -180,7 +180,7 @@ export async function getCampaignInsights(
 // Buscar insights diários (para gráficos)
 export async function getDailyInsights(
   config: FacebookConfig,
-  datePreset: string = 'last_30d'
+  datePreset: string = 'maximum'
 ): Promise<FacebookInsight[]> {
   const accountId = normalizeAdAccountId(config.adAccountId)
   const result = await fbFetch<{ data: FacebookInsight[] }>(

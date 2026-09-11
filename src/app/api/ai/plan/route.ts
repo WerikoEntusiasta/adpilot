@@ -23,15 +23,15 @@ export async function POST(request: Request) {
     let realInterestsContext = ''
     if (effectiveFbToken) {
       try {
-        const searchWords = briefing.split(' ').filter((w) => w.length > 3).slice(0, 3)
-        const foundInterests = []
+        const searchWords = briefing.split(' ').filter((w: string) => w.length > 3).slice(0, 3)
+        const foundInterests: string[] = []
 
         for (const word of searchWords) {
           const fbRes = await fetch(`https://graph.facebook.com/v21.0/search?type=adinterest&q=${encodeURIComponent(word)}&access_token=${effectiveFbToken}&limit=5`)
           if (fbRes.ok) {
             const fbData = await fbRes.json()
             if (fbData.data && Array.isArray(fbData.data)) {
-              fbData.data.forEach((item) => {
+              fbData.data.forEach((item: any) => {
                 if (item.name && !foundInterests.includes(item.name)) {
                   foundInterests.push(item.name)
                 }

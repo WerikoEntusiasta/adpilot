@@ -40,7 +40,8 @@ export interface AiSuggestion {
   impact: 'high' | 'medium' | 'low'
   campaignId?: string
   campaignName?: string
-  action: string
+  action: string | { type: string; description: string }
+  metrics?: { estimatedImprovement?: string }
   details?: Record<string, unknown>
 }
 

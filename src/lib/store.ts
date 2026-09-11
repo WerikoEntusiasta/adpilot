@@ -26,7 +26,7 @@ interface SettingsState {
   // Actions
   setFbKeys: (keys: Partial<Pick<SettingsState, 'fbAppId' | 'fbAppSecret' | 'fbAccessToken' | 'fbAdAccountId' | 'useAdminFbToken'>>) => void
   setFbStatus: (status: 'idle' | 'valid' | 'invalid') => void
-  setAiConfig: (config: Partial<Pick<SettingsState, 'aiEndpoint' | 'aiApiKey' | 'aiModel'>>) => void
+  setAiConfig: (config: Partial<Pick<SettingsState, 'aiEndpoint' | 'aiApiKey' | 'aiModel' | 'envAiConfigured'>>) => void
   setStripeKey: (key: string) => void
   setProStatus: (isPro: boolean) => void
   hasFbKeys: () => boolean
