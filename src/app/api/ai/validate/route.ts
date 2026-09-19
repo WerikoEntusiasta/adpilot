@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig } from '@/lib/ai-helpers'
+import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig, parseAiCompletionResponse } from '@/lib/ai-helpers'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       headers,
       body: JSON.stringify({
         model: finalModel,
+        stream: false,
         messages: [{ role: 'user', content: 'Diga OK' }],
       }),
     })
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
       const statusText = res.status === 429
         ? 'Erro 429 (Limite de requisições / Cota excedida no provedor OpenCode)'
         : res.status === 404
-        ? `Erro 404 (Rota ou modelo "${model}" não encontrado em ${url})`
+        ? `Erro 404 (Rota ou modelo "${finalModel}" não encontrado em ${url})`
         : res.status === 401
         ? 'Erro 401 (API Key não autorizada pelo provedor)'
         : (err?.error?.message || err?.message || `Erro HTTP ${res.status}: ${res.statusText}`)
@@ -42,8 +43,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: false, error: statusText }, { status: res.status })
     }
 
-    const data = await res.json()
-    const responseText = data.choices?.[0]?.message?.content || 'OK'
+    const { content } = await parseAiCompletionResponse(res)
+    const responseText = content || 'OK'
 
     return NextResponse.json({ valid: true, response: responseText })
   } catch (error) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCampaigns, getCampaignInsights, extractCampaignResults, type FacebookConfig } from '@/lib/facebook'
-import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig } from '@/lib/ai-helpers'
+import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig, parseAiCompletionResponse } from '@/lib/ai-helpers'
 
 // Endpoint executado diariamente às 12:00 pelo Vercel Cron ou agendador externo
 export async function GET(request: Request) {
@@ -87,6 +87,7 @@ export async function GET(request: Request) {
           headers,
           body: JSON.stringify({
             model,
+            stream: false,
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: "Campanhas do dia:\n" + JSON.stringify(activeCampaigns) }
@@ -97,8 +98,7 @@ export async function GET(request: Request) {
         })
 
         if (aiRes.ok) {
-          const aiData = await aiRes.json()
-          const content = aiData.choices?.[0]?.message?.content || ''
+          const { content } = await parseAiCompletionResponse(aiRes)
           const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
           const parsed = JSON.parse(cleaned)
 

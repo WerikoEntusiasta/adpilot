@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig } from '@/lib/ai-helpers'
+import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig, parseAiCompletionResponse } from '@/lib/ai-helpers'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
@@ -47,6 +47,7 @@ export async function POST(request: Request) {
       headers,
       body: JSON.stringify({
         model: finalModel,
+        stream: false,
         messages: [
           { 
             role: 'system', 
@@ -62,8 +63,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: err?.error?.message || ("Erro do servidor de IA (" + res.status + ")") }, { status: res.status })
     }
 
-    const data = await res.json()
-    return NextResponse.json({ reply: data.choices?.[0]?.message?.content || '' })
+    const { content } = await parseAiCompletionResponse(res)
+    return NextResponse.json({ reply: content })
   } catch (error) {
     console.error('Erro no chat da IA:', error)
     return NextResponse.json({ error: 'Erro ao comunicar com a IA' }, { status: 500 })
