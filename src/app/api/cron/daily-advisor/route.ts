@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCampaigns, getCampaignInsights, extractCampaignResults, type FacebookConfig } from '@/lib/facebook'
-import { getChatCompletionsUrl, getAiAuthHeaders } from '@/lib/ai-helpers'
+import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig } from '@/lib/ai-helpers'
 
 // Endpoint executado diariamente às 12:00 pelo Vercel Cron ou agendador externo
 export async function GET(request: Request) {
@@ -15,12 +15,10 @@ export async function GET(request: Request) {
 
     // 1. Obter configurações globais da IA
     const globalSettings = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
-    const endpoint = process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || globalSettings?.aiEndpoint || 'https://api.openai.com/v1'
-    const apiKey = process.env.OPENAI_API_KEY || globalSettings?.aiApiKey
-    const model = process.env.OPENAI_MODEL || globalSettings?.aiModel || 'gpt-4o'
+    const { endpoint, apiKey, model, isConfigured } = getResolvedAiConfig(null, null, null, globalSettings)
 
-    if (!apiKey) {
-      return NextResponse.json({ error: 'IA não configurada no servidor' }, { status: 500 })
+    if (!isConfigured) {
+      return NextResponse.json({ error: 'IA não configurada no servidor (.env ou painel)' }, { status: 500 })
     }
 
     // 2. Buscar usuários que têm credenciais do Facebook configuradas

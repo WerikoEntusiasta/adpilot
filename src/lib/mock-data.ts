@@ -14,6 +14,8 @@ export interface Campaign {
   messages?: number
   leads?: number
   purchases?: number
+  purchaseValue?: number
+  resultLabel?: string
   videoViews?: number
   cpa: number
   costPerMessage?: number

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
@@ -6,8 +6,14 @@ export async function GET() {
     const globalSetting = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
     
     // We only expose boolean flags or public info here, no secrets
+    const envAiConfigured = !!(
+      process.env.OPENAI_API_KEY ||
+      process.env.OPENAI_API_BASE ||
+      process.env.OPENAI_BASE_URL
+    )
+
     return NextResponse.json({
-      envAiConfigured: !!process.env.OPENAI_API_KEY,
+      envAiConfigured,
       dbAiConfigured: !!globalSetting?.aiApiKey,
       globalPrice: globalSetting?.globalPrice || 250,
       maintenanceMode: globalSetting?.maintenanceMode || false

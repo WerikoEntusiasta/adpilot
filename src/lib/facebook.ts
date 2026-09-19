@@ -259,8 +259,21 @@ export function extractVideoViews(actions?: Array<{ action_type: string; value: 
 
 export function extractPurchaseValue(actionValues?: Array<{ action_type: string; value: string }>): number {
   if (!actionValues || actionValues.length === 0) return 0
-  const found = actionValues.find(a => a.action_type === 'purchase' || a.action_type.includes('purchase'))
-  return found ? Number(found.value) || 0 : 0
+  const primaryTypes = [
+    'omni_purchase',
+    'offsite_conversion.fb_pixel_purchase',
+    'purchase',
+    'onsite_web_purchase',
+    'onsite_conversion.purchase'
+  ]
+  for (const pType of primaryTypes) {
+    const found = actionValues.find(a => a.action_type === pType || a.action_type.endsWith('.' + pType))
+    if (found && Number(found.value) > 0) {
+      return Number(found.value) || 0
+    }
+  }
+  const fallback = actionValues.find(a => a.action_type.includes('purchase'))
+  return fallback ? Number(fallback.value) || 0 : 0
 }
 
 export function extractCampaignResults(objective: string, actions?: Array<{ action_type: string; value: string }>): { 

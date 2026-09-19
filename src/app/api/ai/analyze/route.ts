@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getChatCompletionsUrl, getAiAuthHeaders } from '@/lib/ai-helpers'
+import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig } from '@/lib/ai-helpers'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
@@ -11,12 +11,10 @@ export async function POST(request: Request) {
       dbSettings = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
     }
 
-    const finalEndpoint = (endpoint && endpoint !== 'https://api.openai.com/v1' ? endpoint : null) || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || dbSettings?.aiEndpoint || 'https://api.openai.com/v1'
-    const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? (process.env.OPENAI_API_KEY || dbSettings?.aiApiKey) : apiKey
-    const finalModel = (model && model !== 'opencode-zen' && model !== 'gpt-4o' ? model : null) || process.env.OPENAI_MODEL || dbSettings?.aiModel || 'gpt-4o'
+    const { endpoint: finalEndpoint, apiKey: finalApiKey, model: finalModel, isConfigured } = getResolvedAiConfig(endpoint, apiKey, model, dbSettings)
 
-    if (!finalApiKey) {
-      return NextResponse.json({ error: 'IA não configurada via painel ou .env' }, { status: 400 })
+    if (!isConfigured) {
+      return NextResponse.json({ error: 'IA não configurada via variáveis de ambiente (.env) ou painel' }, { status: 400 })
     }
 
     if (!campaigns || campaigns.length === 0) {

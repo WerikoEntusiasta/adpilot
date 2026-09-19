@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState, useMemo } from 'react'
 import { KpiCard } from '@/components/dashboard/kpi-card'
@@ -18,8 +18,9 @@ import {
   MessageSquare,
   Users,
   ShoppingBag,
-  Radio,
   Filter,
+  Sparkles,
+  Info
 } from 'lucide-react'
 import { useSettings } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -34,8 +35,12 @@ export default function DashboardPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isRealData, setIsRealData] = useState(false)
 
-  // Objective filter for modular metrics view
+  // Objetivo selecionado (padrão inicial ALL)
   const [selectedObjective, setSelectedObjective] = useState<string>('ALL')
+  // Controla se o usuário escolheu o filtro manualmente
+  const [hasUserManuallySelected, setHasUserManuallySelected] = useState(false)
+  // Guarda o objetivo detectado automaticamente
+  const [autoDetectedObjective, setAutoDetectedObjective] = useState<{ id: string; name: string } | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -45,6 +50,7 @@ export default function DashboardPage() {
     if (!settings.hasFbKeys()) return
     setIsLoading(true)
     setErrorMessage(null)
+
     try {
       const res = await fetch('/api/facebook/campaigns', {
         method: 'POST',
@@ -52,6 +58,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
           adAccountId: settings.fbAdAccountId,
+          useAdminToken: settings.useAdminFbToken
         }),
       })
 
@@ -77,36 +84,89 @@ export default function DashboardPage() {
     if (mounted && settings.hasFbKeys()) {
       loadRealData()
     }
-  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId])
+  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken])
 
-  // Filter campaigns by objective
+  // IDENTIFICAÇÃO AUTOMÁTICA DO OBJETIVO DA CAMPANHA
+  useEffect(() => {
+    if (campaigns.length > 0 && !hasUserManuallySelected) {
+      const activeList = campaigns.filter(c => c.status === 'ACTIVE')
+      const targetList = activeList.length > 0 ? activeList : campaigns
+
+      let salesCount = 0
+      let leadCount = 0
+      let msgCount = 0
+      let trafficCount = 0
+
+      targetList.forEach(c => {
+        const obj = (c.objective || '').toUpperCase()
+        const hasPurchases = (c.purchases && c.purchases > 0) || (c.purchaseValue && c.purchaseValue > 0)
+        const hasMessages = c.messages && c.messages > 0
+        const hasLeads = c.leads && c.leads > 0
+
+        if (obj.includes('SALE') || obj.includes('CONVERSION') || hasPurchases) {
+          salesCount++
+        } else if (obj.includes('LEAD') || hasLeads) {
+          leadCount++
+        } else if (obj.includes('MESSAGE') || obj.includes('ENGAGEMENT') || hasMessages) {
+          msgCount++
+        } else if (obj.includes('TRAFFIC') || (c.clicks && c.clicks > 50)) {
+          trafficCount++
+        }
+      })
+
+      // Se houver campanhas de vendas ativas (ou for o objetivo predominante), foca automaticamente em Vendas
+      if (salesCount > 0 && salesCount >= leadCount && salesCount >= msgCount) {
+        setSelectedObjective('OUTCOME_SALES')
+        setAutoDetectedObjective({ id: 'OUTCOME_SALES', name: 'Vendas & Conversões (E-commerce / Site)' })
+      } else if (msgCount > 0 && msgCount >= leadCount) {
+        setSelectedObjective('MESSAGES')
+        setAutoDetectedObjective({ id: 'MESSAGES', name: 'Mensagens / WhatsApp' })
+      } else if (leadCount > 0) {
+        setSelectedObjective('OUTCOME_LEADS')
+        setAutoDetectedObjective({ id: 'OUTCOME_LEADS', name: 'Geração de Leads' })
+      } else if (trafficCount > 0) {
+        setSelectedObjective('OUTCOME_TRAFFIC')
+        setAutoDetectedObjective({ id: 'OUTCOME_TRAFFIC', name: 'Tráfego & Cliques' })
+      }
+    }
+  }, [campaigns, hasUserManuallySelected])
+
+  // Filtragem das campanhas conforme o objetivo ativo
   const filteredCampaigns = useMemo(() => {
     if (selectedObjective === 'ALL') return campaigns
     if (selectedObjective === 'MESSAGES') {
       return campaigns.filter(c => c.objective.includes('ENGAGEMENT') || c.objective.includes('MESSAGES') || (c.messages && c.messages > 0))
     }
+    if (selectedObjective === 'OUTCOME_SALES') {
+      return campaigns.filter(c => c.objective.includes('SALE') || c.objective.includes('CONVERSION') || (c.purchases && c.purchases > 0) || (c.purchaseValue && c.purchaseValue > 0))
+    }
     return campaigns.filter(c => c.objective === selectedObjective)
   }, [campaigns, selectedObjective])
 
-  // Modular Summary calculations based on filtered campaigns
-  const totalSpend = filteredCampaigns.reduce((sum, c) => sum + c.spend, 0)
-  const totalImpressions = filteredCampaigns.reduce((sum, c) => sum + c.impressions, 0)
-  const totalReach = filteredCampaigns.reduce((sum, c) => sum + (c.reach || 0), 0)
-  const totalClicks = filteredCampaigns.reduce((sum, c) => sum + c.clicks, 0)
+  // Cálculos consolidados das métricas filtradas
+  const totalSpend = filteredCampaigns.reduce((sum, c) => sum + (c.spend || 0), 0)
+  const totalImpressions = filteredCampaigns.reduce((sum, c) => sum + (c.impressions || 0), 0)
+  const totalClicks = filteredCampaigns.reduce((sum, c) => sum + (c.clicks || 0), 0)
   const totalMessages = filteredCampaigns.reduce((sum, c) => sum + (c.messages || 0), 0)
   const totalLeads = filteredCampaigns.reduce((sum, c) => sum + (c.leads || 0), 0)
   const totalPurchases = filteredCampaigns.reduce((sum, c) => sum + (c.purchases || 0), 0)
-  const totalConversions = filteredCampaigns.reduce((sum, c) => sum + c.conversions, 0)
+  const totalPurchaseValue = filteredCampaigns.reduce((sum, c) => sum + (c.purchaseValue || 0), 0)
+
+  // Métricas calculadas para Vendas e ROAS
+  const effectiveRoas = totalSpend > 0 && totalPurchaseValue > 0 
+    ? totalPurchaseValue / totalSpend 
+    : (filteredCampaigns.length > 0 ? filteredCampaigns.reduce((sum, c) => sum + (c.roas || 0), 0) / filteredCampaigns.length : 0)
+
+  const totalNetProfit = totalPurchaseValue > 0 ? totalPurchaseValue - totalSpend : 0
+  const avgTicket = totalPurchases > 0 && totalPurchaseValue > 0 ? totalPurchaseValue / totalPurchases : 0
+  const costPerPurchase = totalPurchases > 0 ? totalSpend / totalPurchases : 0
 
   const avgCtr = filteredCampaigns.length > 0
-    ? filteredCampaigns.reduce((sum, c) => sum + c.ctr, 0) / filteredCampaigns.length
+    ? filteredCampaigns.reduce((sum, c) => sum + (c.ctr || 0), 0) / filteredCampaigns.length
     : 0
   const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0
   const costPerMessage = totalMessages > 0 ? totalSpend / totalMessages : 0
   const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0
-  const avgRoas = filteredCampaigns.length > 0
-    ? filteredCampaigns.reduce((sum, c) => sum + (c.roas || 0), 0) / filteredCampaigns.length
-    : 0
 
   const handleStatusChange = async (id: string, newStatus: 'ACTIVE' | 'PAUSED') => {
     setCampaigns(prev =>
@@ -128,26 +188,24 @@ export default function DashboardPage() {
     }
   }
 
-  // Objective relevancy logic for KPI cards
-  const isMessageRelevant = selectedObjective === 'ALL' || selectedObjective === 'MESSAGES' || selectedObjective === 'OUTCOME_ENGAGEMENT'
-  const isSalesRelevant = selectedObjective === 'ALL' || selectedObjective === 'OUTCOME_SALES'
-  const isLeadRelevant = selectedObjective === 'ALL' || selectedObjective === 'OUTCOME_LEADS'
-  const isTrafficRelevant = selectedObjective === 'ALL' || selectedObjective === 'OUTCOME_TRAFFIC'
-  const isAwarenessRelevant = selectedObjective === 'ALL' || selectedObjective === 'OUTCOME_AWARENESS'
+  const isSalesMode = selectedObjective === 'OUTCOME_SALES'
+  const isMessageMode = selectedObjective === 'MESSAGES'
+  const isLeadMode = selectedObjective === 'OUTCOME_LEADS'
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             Visão Geral
             {isRealData && (
               <span className="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-normal px-2.5 py-0.5 rounded-full">
-                â— Dados em Tempo Real (Facebook API)
+                ● Dados em Tempo Real (Facebook API)
               </span>
             )}
           </h1>
-          <p className="text-muted-foreground mt-1">Métricas modulares e inteligência de anúncios por objetivo</p>
+          <p className="text-muted-foreground mt-1">Métricas inteligentes adaptadas dinamicamente ao objetivo das suas campanhas</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -160,25 +218,56 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Filter by Campaign Objective */}
+      {/* Auto-Detection Indicator & Filter by Objective */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl bg-card border gap-4">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <Filter className="h-4 w-4 text-primary" />
-          <span>Filtrar Métricas por Objetivo da Campanha:</span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Filter className="h-4 w-4 text-primary" />
+            <span>Filtrar Métricas por Objetivo da Campanha:</span>
+          </div>
+          {autoDetectedObjective && !hasUserManuallySelected && (
+            <p className="text-xs text-primary flex items-center gap-1.5 font-medium">
+              <Sparkles className="h-3.5 w-3.5" />
+              Objetivo detectado automaticamente: <strong>{autoDetectedObjective.name}</strong>
+            </p>
+          )}
         </div>
-        <Select value={selectedObjective} onValueChange={setSelectedObjective}>
-          <SelectTrigger className="w-full sm:w-[260px]">
-            <SelectValue placeholder="Todos os Objetivos" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">ðŸŒ Todos os Objetivos (Visão Geral)</SelectItem>
-            <SelectItem value="MESSAGES">ðŸ’¬ Mensagens / WhatsApp / Direct</SelectItem>
-            <SelectItem value="OUTCOME_SALES">ðŸ›ï¸ Vendas & Conversões</SelectItem>
-            <SelectItem value="OUTCOME_LEADS">ðŸ“‹ Geração de Leads</SelectItem>
-            <SelectItem value="OUTCOME_TRAFFIC">ðŸš€ Tráfego & Cliques</SelectItem>
-            <SelectItem value="OUTCOME_AWARENESS">ðŸ“¢ Alcance & Branding</SelectItem>
-          </SelectContent>
-        </Select>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Select 
+            value={selectedObjective} 
+            onValueChange={(val) => {
+              setSelectedObjective(val)
+              setHasUserManuallySelected(true)
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-[280px]">
+              <SelectValue placeholder="Selecione o Objetivo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">🌐 Todos os Objetivos (Visão Geral)</SelectItem>
+              <SelectItem value="OUTCOME_SALES">🛍️ Vendas & Conversões (E-commerce / ROAS)</SelectItem>
+              <SelectItem value="MESSAGES">💬 Mensagens / WhatsApp / Direct</SelectItem>
+              <SelectItem value="OUTCOME_LEADS">📋 Geração de Leads</SelectItem>
+              <SelectItem value="OUTCOME_TRAFFIC">🚀 Tráfego & Cliques</SelectItem>
+              <SelectItem value="OUTCOME_AWARENESS">📢 Alcance & Branding</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasUserManuallySelected && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                setHasUserManuallySelected(false)
+                setSelectedObjective('ALL')
+              }}
+              className="text-xs text-muted-foreground"
+            >
+              Resetar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Status Alerts */}
@@ -192,134 +281,169 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {mounted && !settings.hasFbKeys() && (
-        <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
-            <span>Exibindo métricas simuladas (Modo Demo). Configure suas chaves do Facebook em Configurações para métricas reais.</span>
+      {/* AVISO QUANDO FOR MODO VENDAS SEM VALOR MONETÁRIO NO PIXEL */}
+      {isSalesMode && totalPurchases > 0 && totalPurchaseValue === 0 && (
+        <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm flex items-start gap-3">
+          <Info className="h-5 w-5 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold">Vendas registradas sem valor monetário (currency / value)</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Detectamos <strong>{totalPurchases} compras</strong> registradas no seu Pixel/CAPI, porém sem o envio do valor em Reais de cada transação. O ROAS necessita do valor da receita gerada para ser calculado automaticamente.
+            </p>
           </div>
-          <Button size="sm" variant="outline" asChild>
-            <a href="/dashboard/settings">Configurar Chaves</a>
-          </Button>
         </div>
       )}
 
-      {/* MODULAR KPI CARDS GRID */}
-      <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Métricas Principais ({selectedObjective === 'ALL' ? 'Todas as Campanhas' : selectedObjective})
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {/* Universal Metrics */}
-          <KpiCard
-            title="Gasto Total"
-            value={formatCurrency(totalSpend)}
-            icon={DollarSign}
-            badge="Geral"
-            isHighlight={true}
-          />
-          <KpiCard
-            title="Impressões"
-            value={formatNumber(totalImpressions)}
-            icon={Eye}
-            badge="Geral"
-          />
+      {/* DASHBOARD ADAPTADO: MODO VENDAS & E-COMMERCE (COM INVESTIMENTO, RETORNO E ROAS) */}
+      {isSalesMode ? (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4" /> Painel de Retorno sobre Investimento (Vendas & ROAS)
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Valor Investido */}
+              <KpiCard
+                title="Valor Investido (Gasto)"
+                value={formatCurrency(totalSpend)}
+                icon={DollarSign}
+                badge="Investimento Total"
+                isHighlight={true}
+              />
 
-          {/* Messaging / WhatsApp Metrics */}
-          <KpiCard
-            title="Mensagens Iniciadas (WhatsApp/Direct)"
-            value={formatNumber(totalMessages)}
-            icon={MessageSquare}
-            badge="WhatsApp / Direct"
-            isApplicable={isMessageRelevant}
-            isHighlight={selectedObjective === 'MESSAGES'}
-            subtitle={costPerMessage > 0 ? `Custo p/ Msg: ${formatCurrency(costPerMessage)}` : undefined}
-          />
-          <KpiCard
-            title="Custo por Mensagem"
-            value={formatCurrency(costPerMessage)}
-            icon={BarChart3}
-            badge="WhatsApp / Direct"
-            isApplicable={isMessageRelevant && totalMessages > 0}
-          />
+              {/* Retorno das Vendas (Receita) */}
+              <KpiCard
+                title="Retorno das Vendas (Receita)"
+                value={totalPurchaseValue > 0 ? formatCurrency(totalPurchaseValue) : (totalPurchases > 0 ? `${totalPurchases} compras` : 'R$ 0,00')}
+                icon={TrendingUp}
+                badge={totalPurchaseValue > 0 ? "Faturamento Pixel" : "Vendas"}
+                isHighlight={totalPurchaseValue > 0}
+                subtitle={totalPurchaseValue > 0 && totalPurchases > 0 ? `Ticket Médio: ${formatCurrency(avgTicket)}` : undefined}
+              />
 
-          {/* Lead Metrics */}
-          <KpiCard
-            title="Leads Gerados"
-            value={formatNumber(totalLeads)}
-            icon={Users}
-            badge="Leads"
-            isApplicable={isLeadRelevant}
-            isHighlight={selectedObjective === 'OUTCOME_LEADS'}
-            subtitle={costPerLead > 0 ? `CPL: ${formatCurrency(costPerLead)}` : undefined}
-          />
-          <KpiCard
-            title="Custo por Lead (CPL)"
-            value={formatCurrency(costPerLead)}
-            icon={BarChart3}
-            badge="Leads"
-            isApplicable={isLeadRelevant && totalLeads > 0}
-          />
+              {/* ROAS Real */}
+              <KpiCard
+                title="ROAS Real da Conta"
+                value={effectiveRoas > 0 ? `${effectiveRoas.toFixed(2)}x` : '—'}
+                icon={TrendingUp}
+                badge="Retorno / Investimento"
+                isHighlight={effectiveRoas >= 2}
+                subtitle={effectiveRoas > 0 ? `R$ ${effectiveRoas.toFixed(2)} gerados a cada R$ 1 gasto` : undefined}
+              />
 
-          {/* Sales & Conversion Metrics */}
-          <KpiCard
-            title="Vendas / Conversões"
-            value={formatNumber(totalConversions)}
-            icon={ShoppingBag}
-            badge="Vendas / E-commerce"
-            isApplicable={isSalesRelevant}
-            isHighlight={selectedObjective === 'OUTCOME_SALES'}
-          />
-          <KpiCard
-            title="ROAS Médio"
-            value={avgRoas > 0 ? `${avgRoas.toFixed(1)}x` : 'â€”'}
-            icon={TrendingUp}
-            badge="Vendas"
-            isApplicable={isSalesRelevant}
-          />
+              {/* Lucro Bruto dos Anúncios */}
+              <KpiCard
+                title="Lucro Bruto dos Anúncios"
+                value={totalPurchaseValue > 0 ? formatCurrency(totalNetProfit) : '—'}
+                icon={Target}
+                badge="Retorno - Investimento"
+                subtitle={totalPurchaseValue > 0 ? (totalNetProfit >= 0 ? 'Resultado Positivo' : 'Investimento maior que retorno') : undefined}
+              />
+            </div>
+          </div>
 
-          {/* Traffic Metrics */}
-          <KpiCard
-            title="Cliques no Link"
-            value={formatNumber(totalClicks)}
-            icon={MousePointer}
-            badge="Tráfego"
-            isApplicable={isTrafficRelevant}
-            isHighlight={selectedObjective === 'OUTCOME_TRAFFIC'}
-          />
-          <KpiCard
-            title="CTR Médio"
-            value={formatPercent(avgCtr)}
-            icon={TrendingUp}
-            badge="Tráfego"
-            isApplicable={isTrafficRelevant}
-          />
-          <KpiCard
-            title="CPC Médio"
-            value={formatCurrency(avgCpc)}
-            icon={BarChart3}
-            badge="Tráfego"
-            isApplicable={isTrafficRelevant}
-          />
-
-          {/* Reach / Branding Metrics */}
-          <KpiCard
-            title="Alcance Total (Reach)"
-            value={formatNumber(totalReach)}
-            icon={Radio}
-            badge="Branding"
-            isApplicable={isAwarenessRelevant}
-            isHighlight={selectedObjective === 'OUTCOME_AWARENESS'}
-          />
+          <div className="grid gap-4 md:grid-cols-3">
+            <KpiCard
+              title="Vendas Realizadas (Compras)"
+              value={formatNumber(totalPurchases)}
+              icon={ShoppingBag}
+              badge="Conversões"
+              subtitle={costPerPurchase > 0 ? `CPA (Custo p/ Compra): ${formatCurrency(costPerPurchase)}` : undefined}
+            />
+            <KpiCard
+              title="Cliques no Link"
+              value={formatNumber(totalClicks)}
+              icon={MousePointer}
+              badge="Tráfego"
+              subtitle={avgCpc > 0 ? `CPC Médio: ${formatCurrency(avgCpc)}` : undefined}
+            />
+            <KpiCard
+              title="Taxa de Cliques (CTR)"
+              value={formatPercent(avgCtr)}
+              icon={BarChart3}
+              badge="Engajamento"
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        /* GRID DE MÉTRICAS MODULARES / OUTROS OBJETIVOS */
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Métricas Principais ({selectedObjective === 'ALL' ? 'Todas as Campanhas' : selectedObjective})
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <KpiCard
+              title="Gasto Total"
+              value={formatCurrency(totalSpend)}
+              icon={DollarSign}
+              badge="Geral"
+              isHighlight={true}
+            />
+            <KpiCard
+              title="Impressões"
+              value={formatNumber(totalImpressions)}
+              icon={Eye}
+              badge="Geral"
+            />
 
-      {/* Charts */}
+            {/* WhatsApp / Direct */}
+            <KpiCard
+              title="Mensagens Iniciadas (WhatsApp)"
+              value={formatNumber(totalMessages)}
+              icon={MessageSquare}
+              badge="WhatsApp / Direct"
+              isApplicable={selectedObjective === 'ALL' || isMessageMode}
+              isHighlight={isMessageMode}
+              subtitle={costPerMessage > 0 ? `Custo p/ Msg: ${formatCurrency(costPerMessage)}` : undefined}
+            />
+
+            {/* Leads */}
+            <KpiCard
+              title="Leads Gerados"
+              value={formatNumber(totalLeads)}
+              icon={Users}
+              badge="Leads"
+              isApplicable={selectedObjective === 'ALL' || isLeadMode}
+              isHighlight={isLeadMode}
+              subtitle={costPerLead > 0 ? `CPL: ${formatCurrency(costPerLead)}` : undefined}
+            />
+
+            {/* Vendas & ROAS quando em visão geral */}
+            <KpiCard
+              title="Vendas / Conversões"
+              value={formatNumber(totalPurchases)}
+              icon={ShoppingBag}
+              badge="Vendas"
+            />
+            <KpiCard
+              title="ROAS Médio"
+              value={effectiveRoas > 0 ? `${effectiveRoas.toFixed(2)}x` : '—'}
+              icon={TrendingUp}
+              badge="Vendas"
+            />
+
+            {/* Tráfego */}
+            <KpiCard
+              title="Cliques no Link"
+              value={formatNumber(totalClicks)}
+              icon={MousePointer}
+              badge="Tráfego"
+            />
+            <KpiCard
+              title="CTR Médio"
+              value={formatPercent(avgCtr)}
+              icon={BarChart3}
+              badge="Tráfego"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Gráfico de Performance */}
       <PerformanceChart data={dailyMetrics} />
 
-      {/* Campaign Table */}
+      {/* Tabela Detalhada das Campanhas */}
       <CampaignTable campaigns={filteredCampaigns} onStatusChange={handleStatusChange} />
     </div>
   )
 }
-

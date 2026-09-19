@@ -17,7 +17,11 @@ export async function GET() {
     return NextResponse.json({ 
       success: true, 
       settings: globalSetting,
-      envAiConfigured: !!process.env.OPENAI_API_KEY
+      envAiConfigured: !!(
+        process.env.OPENAI_API_KEY ||
+        process.env.OPENAI_API_BASE ||
+        process.env.OPENAI_BASE_URL
+      )
     })
   } catch (error) {
     console.error('API Error:', error)

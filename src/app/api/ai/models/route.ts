@@ -1,5 +1,5 @@
-﻿import { NextResponse } from 'next/server'
-import { getModelsUrl, getAiAuthHeaders } from '@/lib/ai-helpers'
+import { NextResponse } from 'next/server'
+import { getModelsUrl, getAiAuthHeaders, getResolvedAiConfig } from '@/lib/ai-helpers'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
@@ -11,11 +11,10 @@ export async function POST(request: Request) {
       dbSettings = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
     }
 
-    const finalEndpoint = (endpoint && endpoint !== 'https://api.openai.com/v1' ? endpoint : null) || process.env.OPENAI_API_BASE || process.env.OPENAI_BASE_URL || dbSettings?.aiEndpoint || 'https://api.openai.com/v1'
-    const finalApiKey = (!apiKey || apiKey === 'ENV_CONFIGURED') ? (process.env.OPENAI_API_KEY || dbSettings?.aiApiKey) : apiKey
+    const { endpoint: finalEndpoint, apiKey: finalApiKey, isConfigured } = getResolvedAiConfig(endpoint, apiKey, null, dbSettings)
 
-    if (!finalApiKey) {
-      return NextResponse.json({ error: 'IA não configurada via painel ou .env' }, { status: 400 })
+    if (!isConfigured) {
+      return NextResponse.json({ error: 'IA não configurada via variáveis de ambiente (.env) ou painel' }, { status: 400 })
     }
 
     const url = getModelsUrl(finalEndpoint)
