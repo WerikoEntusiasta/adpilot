@@ -17,15 +17,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'IA não configurada via variáveis de ambiente (.env) ou painel' }, { status: 400 })
     }
 
-    if (!campaigns || campaigns.length === 0) {
+    // Filtrar estritamente campanhas operacionais (campanhas arquivadas NUNCA servem de dados para a IA)
+    const validCampaigns = Array.isArray(campaigns)
+      ? campaigns.filter((c: any) => c.status !== 'ARCHIVED' && (c as any).effective_status !== 'ARCHIVED' && (c as any).effectiveStatus !== 'ARCHIVED')
+      : []
+
+    if (validCampaigns.length === 0) {
       return NextResponse.json({
         suggestions: [{
           id: 'no-data',
           type: 'warning',
           impact: 'high',
-          title: 'Nenhuma campanha detectada',
-          description: 'A IA identificou que não há campanhas ativas reais conectadas na conta.',
-          action: { type: 'pause', description: 'Conecte sua conta do Facebook Ads nas configurações.' }
+          title: 'Nenhuma campanha operacional detectada',
+          description: 'A IA identificou que não há campanhas ativas ou pausadas na conta. Campanhas arquivadas são completamente desconsideradas para fins de análise e estratégia.',
+          action: { type: 'pause', description: 'Crie ou ative campanhas no seu Gerenciador do Meta Ads.' }
         }]
       })
     }
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
           },
           {
             role: 'user',
-            content: "Aqui estão as campanhas reais do usuário para análise:\n" + JSON.stringify(campaigns.slice(0, 10))
+            content: "Aqui estão as campanhas reais do usuário para análise (campanhas arquivadas foram excluídas):\n" + JSON.stringify(validCampaigns.slice(0, 10))
           }
         ],
         temperature: 0.3,

@@ -75,6 +75,7 @@ export default function CampaignsPage() {
       if (activeTab === 'ACTIVE' && c.status !== 'ACTIVE') return false
       if (activeTab === 'PAUSED' && c.status !== 'PAUSED') return false
       if (activeTab === 'ARCHIVED' && c.status !== 'ARCHIVED') return false
+      if (activeTab === 'ALL' && c.status === 'ARCHIVED') return false // Arquivadas ficam isoladas estritamente na sua guia dedicada!
 
       // Busca por nome
       if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
@@ -155,7 +156,7 @@ export default function CampaignsPage() {
             className="flex items-center justify-center gap-2 py-2 px-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-muted-foreground font-medium"
           >
             <Archive className="h-3.5 w-3.5" />
-            <span>Arquivadas</span>
+            <span>Arquivadas (Histórico)</span>
             <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 h-4 font-mono">
               {archivedCount}
             </Badge>
@@ -166,9 +167,9 @@ export default function CampaignsPage() {
             className="flex items-center justify-center gap-2 py-2 px-3 text-xs sm:text-sm data-[state=active]:bg-background font-medium"
           >
             <Layers className="h-3.5 w-3.5" />
-            <span>Todas</span>
+            <span>Todas (Ativas + Pausadas)</span>
             <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 h-4 font-mono">
-              {campaigns.length}
+              {activeCount + pausedCount}
             </Badge>
           </TabsTrigger>
         </TabsList>

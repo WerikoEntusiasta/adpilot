@@ -102,7 +102,9 @@ export default function AdvisorPage() {
       .then(r => r.json())
       .then(data => {
         if (data.campaigns) {
-          setRealCampaigns(data.campaigns)
+          // Filtrar estritamente campanhas operacionais (arquivadas NUNCA servem como parâmetro)
+          const operational = data.campaigns.filter((c: any) => c.status !== 'ARCHIVED')
+          setRealCampaigns(operational)
         }
       })
       .catch(e => console.error('Erro ao buscar campanhas do Facebook:', e))

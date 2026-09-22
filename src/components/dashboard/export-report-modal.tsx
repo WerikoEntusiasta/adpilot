@@ -67,9 +67,9 @@ export function ExportReportModal({
   }
   const periodLabel = periodMap[datePreset] || 'Período Selecionado'
 
-  // Top campanhas por performance
+  // Top campanhas operacionais por performance (estritamente não-arquivadas!)
   const topCampaigns = [...campaigns]
-    .filter(c => (c.spend || 0) > 0)
+    .filter(c => c.status !== 'ARCHIVED' && (c.spend || 0) > 0)
     .sort((a, b) => (b.roas || 0) - (a.roas || 0) || (b.conversions || 0) - (a.conversions || 0))
     .slice(0, 3)
 

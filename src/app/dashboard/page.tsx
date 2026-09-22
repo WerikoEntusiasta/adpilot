@@ -103,11 +103,17 @@ export default function DashboardPage() {
     }
   }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken, datePreset])
 
-  // IDENTIFICAÇÃO AUTOMÁTICA DO OBJETIVO DA CAMPANHA
+  // 1. Filtrar estritamente campanhas operacionais (ativas e pausadas).
+  // Campanhas arquivadas NUNCA entram em cálculos de métricas, totais, ROAS ou parâmetros da conta!
+  const operationalCampaigns = useMemo(() => {
+    return campaigns.filter(c => c.status !== 'ARCHIVED')
+  }, [campaigns])
+
+  // IDENTIFICAÇÃO AUTOMÁTICA DO OBJETIVO DA CONTA (somente campanhas operacionais!)
   useEffect(() => {
-    if (campaigns.length > 0 && !hasUserManuallySelected) {
-      const activeList = campaigns.filter(c => c.status === 'ACTIVE')
-      const targetList = activeList.length > 0 ? activeList : campaigns
+    if (operationalCampaigns.length > 0 && !hasUserManuallySelected) {
+      const activeList = operationalCampaigns.filter(c => c.status === 'ACTIVE')
+      const targetList = activeList.length > 0 ? activeList : operationalCampaigns
 
       let salesCount = 0
       let leadCount = 0
@@ -142,33 +148,35 @@ export default function DashboardPage() {
         setAutoDetectedObjective({ id: 'OUTCOME_TRAFFIC', name: 'Tráfego & Cliques' })
       }
     }
-  }, [campaigns, hasUserManuallySelected])
+  }, [operationalCampaigns, hasUserManuallySelected])
 
-  // Filtragem das campanhas conforme o objetivo ativo
+  // Filtragem das campanhas operacionais conforme o objetivo ativo selecionado
   const filteredCampaigns = useMemo(() => {
-    if (selectedObjective === 'ALL') return campaigns
+    if (selectedObjective === 'ALL') return operationalCampaigns
     if (selectedObjective === 'MESSAGES') {
-      return campaigns.filter(c => c.objective.includes('ENGAGEMENT') || c.objective.includes('MESSAGES') || (c.messages && c.messages > 0))
+      return operationalCampaigns.filter(c => c.objective.includes('ENGAGEMENT') || c.objective.includes('MESSAGES') || (c.messages && c.messages > 0))
     }
     if (selectedObjective === 'OUTCOME_SALES') {
-      return campaigns.filter(c => c.objective.includes('SALE') || c.objective.includes('CONVERSION') || (c.purchases && c.purchases > 0) || (c.purchaseValue && c.purchaseValue > 0))
+      return operationalCampaigns.filter(c => c.objective.includes('SALE') || c.objective.includes('CONVERSION') || (c.purchases && c.purchases > 0) || (c.purchaseValue && c.purchaseValue > 0))
     }
-    return campaigns.filter(c => c.objective === selectedObjective)
-  }, [campaigns, selectedObjective])
+    return operationalCampaigns.filter(c => c.objective === selectedObjective)
+  }, [operationalCampaigns, selectedObjective])
 
   // Contagens por status para as abas da tabela
-  const activeCount = useMemo(() => filteredCampaigns.filter(c => c.status === 'ACTIVE').length, [filteredCampaigns])
-  const pausedCount = useMemo(() => filteredCampaigns.filter(c => c.status === 'PAUSED').length, [filteredCampaigns])
-  const archivedCount = useMemo(() => filteredCampaigns.filter(c => c.status === 'ARCHIVED').length, [filteredCampaigns])
+  const activeCount = useMemo(() => campaigns.filter(c => c.status === 'ACTIVE').length, [campaigns])
+  const pausedCount = useMemo(() => campaigns.filter(c => c.status === 'PAUSED').length, [campaigns])
+  const archivedCount = useMemo(() => campaigns.filter(c => c.status === 'ARCHIVED').length, [campaigns])
 
+  // Campanhas a serem exibidas na tabela conforme a aba ativa
   const displayedCampaigns = useMemo(() => {
-    return filteredCampaigns.filter(c => {
+    return campaigns.filter(c => {
       if (tableStatusTab === 'ACTIVE') return c.status === 'ACTIVE'
       if (tableStatusTab === 'PAUSED') return c.status === 'PAUSED'
       if (tableStatusTab === 'ARCHIVED') return c.status === 'ARCHIVED'
+      if (tableStatusTab === 'ALL') return c.status !== 'ARCHIVED' // Na aba Todas, apenas ativas e pausadas!
       return true
     })
-  }, [filteredCampaigns, tableStatusTab])
+  }, [campaigns, tableStatusTab])
 
   // Cálculos consolidados das métricas filtradas
   const totalSpend = filteredCampaigns.reduce((sum, c) => sum + (c.spend || 0), 0)
@@ -623,7 +631,7 @@ export default function DashboardPage() {
               className="flex items-center justify-center gap-2 py-1.5 px-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-muted-foreground font-medium"
             >
               <Archive className="h-3.5 w-3.5" />
-              <span>Arquivadas</span>
+              <span>Arquivadas (Histórico)</span>
               <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 h-4 font-mono">
                 {archivedCount}
               </Badge>
@@ -634,9 +642,9 @@ export default function DashboardPage() {
               className="flex items-center justify-center gap-2 py-1.5 px-3 text-xs sm:text-sm data-[state=active]:bg-background font-medium"
             >
               <Layers className="h-3.5 w-3.5" />
-              <span>Todas</span>
+              <span>Todas (Ativas + Pausadas)</span>
               <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 h-4 font-mono">
-                {filteredCampaigns.length}
+                {activeCount + pausedCount}
               </Badge>
             </TabsTrigger>
           </TabsList>
