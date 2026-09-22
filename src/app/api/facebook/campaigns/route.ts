@@ -77,10 +77,19 @@ export async function POST(request: Request) {
       const costPerLead = leads > 0 && spend > 0 ? spend / leads : 0
       const roas = spend > 0 && purchaseValue > 0 ? purchaseValue / spend : 0
 
-      const rawStatus = (c.status || '').toUpperCase()
-      const effStatus = ((c as any).effective_status || '').toUpperCase()
-      const isArchived = rawStatus === 'ARCHIVED' || effStatus === 'ARCHIVED'
-      const isActive = !isArchived && (rawStatus === 'ACTIVE' || effStatus === 'ACTIVE')
+      const rawStatus = (c.status || '').toUpperCase().trim()
+      const effStatus = ((c as any).effective_status || '').toUpperCase().trim()
+      const isArchived = rawStatus === 'ARCHIVED' || effStatus === 'ARCHIVED' || effStatus === 'DELETED'
+      const isActive = !isArchived && (
+        rawStatus === 'ACTIVE' ||
+        effStatus === 'ACTIVE' ||
+        effStatus === 'IN_PROCESS' ||
+        effStatus === 'PENDING_REVIEW' ||
+        effStatus === 'WITH_ISSUES' ||
+        effStatus === 'PREAPPROVED' ||
+        effStatus === 'SCHEDULED' ||
+        effStatus.includes('ACTIVE')
+      )
       const finalStatus: 'ACTIVE' | 'PAUSED' | 'ARCHIVED' = isArchived ? 'ARCHIVED' : isActive ? 'ACTIVE' : 'PAUSED'
 
       return {

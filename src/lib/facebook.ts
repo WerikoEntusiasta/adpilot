@@ -149,31 +149,33 @@ async function fbFetchAll<T>(
 // Buscar todas as campanhas da conta com paginação e todos os status
 export async function getCampaigns(config: FacebookConfig): Promise<FacebookCampaign[]> {
   const accountId = normalizeAdAccountId(config.adAccountId)
+  // 1. Busca direta sem filtros restritivos (Meta retorna todas as campanhas da conta)
   try {
     const campaigns = await fbFetchAll<FacebookCampaign>(
       '/' + accountId + '/campaigns',
       config,
       {
         fields: 'id,name,status,effective_status,objective,daily_budget,lifetime_budget,created_time,start_time,stop_time',
-        filtering: JSON.stringify([
-          { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }
-        ]),
-        limit: '100',
+        limit: '150',
       }
     )
     if (campaigns && campaigns.length > 0) {
       return campaigns
     }
   } catch (err) {
-    console.warn('Tentativa com filtering falhou, executando fallback sem filtro:', err)
+    console.warn('Busca direta de campanhas falhou, tentando fallback:', err)
   }
 
+  // 2. Fallback abrangendo todos os estados de entrega do Meta
   return fbFetchAll<FacebookCampaign>(
     '/' + accountId + '/campaigns',
     config,
     {
       fields: 'id,name,status,effective_status,objective,daily_budget,lifetime_budget,created_time,start_time,stop_time',
-      limit: '100',
+      filtering: JSON.stringify([
+        { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'IN_PROCESS', 'WITH_ISSUES', 'PENDING_REVIEW', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED'] }
+      ]),
+      limit: '150',
     }
   )
 }
@@ -186,10 +188,7 @@ export async function getAdSetsByCampaign(campaignId: string, config: FacebookCo
       config,
       {
         fields: 'id,name,status,effective_status,campaign_id,daily_budget,lifetime_budget,billing_event,optimization_goal,targeting,created_time,start_time,end_time',
-        filtering: JSON.stringify([
-          { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }
-        ]),
-        limit: '100',
+        limit: '150',
       }
     )
     if (adSets && adSets.length > 0) {
@@ -204,7 +203,10 @@ export async function getAdSetsByCampaign(campaignId: string, config: FacebookCo
     config,
     {
       fields: 'id,name,status,effective_status,campaign_id,daily_budget,lifetime_budget,billing_event,optimization_goal,targeting,created_time,start_time,end_time',
-      limit: '100',
+      filtering: JSON.stringify([
+        { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'IN_PROCESS', 'WITH_ISSUES', 'PENDING_REVIEW', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED'] }
+      ]),
+      limit: '150',
     }
   )
 }
@@ -217,10 +219,7 @@ export async function getAdsByCampaign(campaignId: string, config: FacebookConfi
       config,
       {
         fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
-        filtering: JSON.stringify([
-          { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }
-        ]),
-        limit: '100',
+        limit: '150',
       }
     )
     if (ads && ads.length > 0) {
@@ -235,7 +234,10 @@ export async function getAdsByCampaign(campaignId: string, config: FacebookConfi
     config,
     {
       fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
-      limit: '100',
+      filtering: JSON.stringify([
+        { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'IN_PROCESS', 'WITH_ISSUES', 'PENDING_REVIEW', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED'] }
+      ]),
+      limit: '150',
     }
   )
 }
@@ -441,10 +443,7 @@ export async function getAccountAds(config: FacebookConfig): Promise<FacebookAd[
       config,
       {
         fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
-        filtering: JSON.stringify([
-          { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }
-        ]),
-        limit: '100',
+        limit: '150',
       }
     )
     if (ads && ads.length > 0) return ads
@@ -457,7 +456,10 @@ export async function getAccountAds(config: FacebookConfig): Promise<FacebookAd[
     config,
     {
       fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
-      limit: '100',
+      filtering: JSON.stringify([
+        { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'IN_PROCESS', 'WITH_ISSUES', 'PENDING_REVIEW', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED'] }
+      ]),
+      limit: '150',
     }
   )
 }

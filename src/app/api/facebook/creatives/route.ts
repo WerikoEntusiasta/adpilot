@@ -306,10 +306,19 @@ export async function POST(req: NextRequest) {
         recommendation = 'Prepare novas variações de criativo para rodar quando o CTR cair ainda mais.'
       }
 
-      const rawStatus = (ad.status || '').toUpperCase()
-      const effStatus = ((ad as any).effective_status || '').toUpperCase()
-      const isArchived = rawStatus === 'ARCHIVED' || effStatus === 'ARCHIVED'
-      const isActive = !isArchived && (rawStatus === 'ACTIVE' || effStatus === 'ACTIVE')
+      const rawStatus = (ad.status || '').toUpperCase().trim()
+      const effStatus = ((ad as any).effective_status || '').toUpperCase().trim()
+      const isArchived = rawStatus === 'ARCHIVED' || effStatus === 'ARCHIVED' || effStatus === 'DELETED'
+      const isActive = !isArchived && (
+        rawStatus === 'ACTIVE' ||
+        effStatus === 'ACTIVE' ||
+        effStatus === 'IN_PROCESS' ||
+        effStatus === 'PENDING_REVIEW' ||
+        effStatus === 'WITH_ISSUES' ||
+        effStatus === 'PREAPPROVED' ||
+        effStatus === 'SCHEDULED' ||
+        effStatus.includes('ACTIVE')
+      )
       const status: 'ACTIVE' | 'PAUSED' | 'ARCHIVED' = isArchived ? 'ARCHIVED' : isActive ? 'ACTIVE' : 'PAUSED'
 
       const bestImage =
