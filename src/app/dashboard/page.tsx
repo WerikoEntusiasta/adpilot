@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import Link from 'next/link'
 import { KpiCard } from '@/components/dashboard/kpi-card'
 import { CampaignTable } from '@/components/dashboard/campaign-table'
 import { PerformanceChart } from '@/components/dashboard/performance-chart'
+import { ExportReportModal } from '@/components/dashboard/export-report-modal'
 import type { Campaign, DailyMetric } from '@/lib/mock-data'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
 import {
@@ -24,7 +26,10 @@ import {
   Calendar,
   Archive,
   PauseCircle,
-  Layers
+  Layers,
+  ShieldAlert,
+  Trophy,
+  ArrowRight
 } from 'lucide-react'
 import { useSettings } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -254,7 +259,58 @@ export default function DashboardPage() {
               Sincronizar
             </Button>
           )}
+
+          <ExportReportModal
+            campaigns={campaigns}
+            datePreset={datePreset}
+            totalSpend={totalSpend}
+            totalPurchaseValue={totalPurchaseValue}
+            effectiveRoas={effectiveRoas}
+            totalPurchases={totalPurchases}
+            totalMessages={totalMessages}
+            totalLeads={totalLeads}
+            totalClicks={totalClicks}
+          />
         </div>
+      </div>
+
+      {/* Quick Launch Banner: Guardião & Criativos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Link href="/dashboard/guardian" className="group">
+          <div className="p-3.5 rounded-xl border bg-card/60 hover:bg-card hover:border-primary/40 transition-all flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  Guardião Anti-Prejuízo
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.2 rounded font-normal">Monitorando</span>
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Stop-loss de anúncios e controle de CPA máximo</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </Link>
+
+        <Link href="/dashboard/creatives" className="group">
+          <div className="p-3.5 rounded-xl border bg-card/60 hover:bg-card hover:border-primary/40 transition-all flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Trophy className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  Galeria de Criativos & Fadiga
+                  <span className="text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.2 rounded font-normal">Radar</span>
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Ranking de campeões e detector de saturação</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </Link>
       </div>
 
       {/* Auto-Detection Indicator & Filter by Objective */}

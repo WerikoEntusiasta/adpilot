@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -16,14 +16,19 @@ import {
   X,
   Rocket,
   LogOut,
-  LifeBuoy
-, HelpCircle} from 'lucide-react'
+  LifeBuoy,
+  HelpCircle,
+  Trophy,
+  ShieldAlert
+} from 'lucide-react'
 import { useAuth } from '@/lib/auth-store'
 import { useSettings } from '@/lib/store'
 
 const navItems = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
   { href: '/dashboard/campaigns', label: 'Campanhas', icon: Megaphone },
+  { href: '/dashboard/creatives', label: 'Criativos & Fadiga', icon: Trophy },
+  { href: '/dashboard/guardian', label: 'Guardião', icon: ShieldAlert },
   { href: '/dashboard/advisor', label: 'IA Advisor', icon: Brain },
   { href: '/dashboard/planner', label: 'Planejador', icon: CalendarPlus },
   { href: '/dashboard/meta-support', label: 'Central de Ajuda', icon: HelpCircle },

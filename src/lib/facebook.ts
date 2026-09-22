@@ -62,6 +62,7 @@ export interface FacebookInsight {
   cpc: string
   cpm: string
   reach: string
+  frequency?: string
   actions?: Array<{ action_type: string; value: string }>
   action_values?: Array<{ action_type: string; value: string }>
   date_start: string
@@ -429,4 +430,66 @@ export function extractCampaignResults(objective: string, actions?: Array<{ acti
     salesCount: 0,
     leadsCount: 0
   }
+}
+
+// Buscar todos os anúncios da conta com dados de criativo
+export async function getAccountAds(config: FacebookConfig): Promise<FacebookAd[]> {
+  const accountId = normalizeAdAccountId(config.adAccountId)
+  try {
+    const ads = await fbFetchAll<FacebookAd>(
+      '/' + accountId + '/ads',
+      config,
+      {
+        fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url}',
+        filtering: JSON.stringify([
+          { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }
+        ]),
+        limit: '100',
+      }
+    )
+    if (ads && ads.length > 0) return ads
+  } catch (err) {
+    console.warn('Fallback getAccountAds:', err)
+  }
+
+  return fbFetchAll<FacebookAd>(
+    '/' + accountId + '/ads',
+    config,
+    {
+      fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url}',
+      limit: '100',
+    }
+  )
+}
+
+// Buscar insights de todos os anúncios da conta
+export async function getAccountAdInsights(config: FacebookConfig, datePreset: string = 'maximum'): Promise<FacebookInsight[]> {
+  const accountId = normalizeAdAccountId(config.adAccountId)
+  return fbFetchAll<FacebookInsight>(
+    '/' + accountId + '/insights',
+    config,
+    {
+      fields: 'ad_id,ad_name,spend,impressions,clicks,ctr,cpc,cpm,reach,frequency,actions,action_values',
+      level: 'ad',
+      date_preset: datePreset,
+      limit: '100',
+    }
+  )
+}
+
+// Atualizar status de um anúncio (ex: pausar pelo Stop-Loss)
+export async function updateAdStatus(adId: string, status: 'ACTIVE' | 'PAUSED', config: FacebookConfig): Promise<{ success: boolean }> {
+  const res = await fetch(GRAPH_API_BASE + '/' + adId, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      access_token: config.accessToken.trim(),
+      status: status,
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error?.message || 'Falha ao atualizar status do anúncio no Facebook (' + res.status + ')')
+  }
+  return { success: true }
 }
