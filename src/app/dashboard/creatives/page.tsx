@@ -57,7 +57,8 @@ export default function CreativesPage() {
     setMounted(true)
   }, [])
 
-  const loadCreatives = async (preset = datePreset) => {
+  const loadCreatives = async (preset = datePreset, overrideAccountId?: string, forceRefresh = false) => {
+    const targetAccountId = overrideAccountId || settings.fbAdAccountId
     setIsLoading(true)
     try {
       const res = await fetch('/api/facebook/creatives', {
@@ -65,9 +66,10 @@ export default function CreativesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
-          adAccountId: settings.fbAdAccountId,
+          adAccountId: targetAccountId,
           useAdminToken: settings.useAdminFbToken,
           datePreset: preset,
+          refresh: forceRefresh,
         }),
       })
       const data = await res.json()
@@ -83,7 +85,19 @@ export default function CreativesPage() {
     if (mounted) {
       loadCreatives(datePreset)
     }
-  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, datePreset])
+  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken, datePreset])
+
+  // Atualização instantânea ao trocar conta no Topbar
+  useEffect(() => {
+    const handleAccountSwitched = (e: Event) => {
+      const customEvent = e as CustomEvent<{ adAccountId: string }>
+      if (customEvent.detail?.adAccountId) {
+        loadCreatives(datePreset, customEvent.detail.adAccountId)
+      }
+    }
+    window.addEventListener('adpilot:account-switched', handleAccountSwitched)
+    return () => window.removeEventListener('adpilot:account-switched', handleAccountSwitched)
+  }, [datePreset, settings.fbAccessToken, settings.useAdminFbToken])
 
   const handleOpenPreview = (item: CreativeItem) => {
     setSelectedPreview(item)

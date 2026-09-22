@@ -62,8 +62,11 @@ export default function DashboardPage() {
     setMounted(true)
   }, [])
 
-  const loadRealData = async (preset = datePreset) => {
-    if (!settings.hasFbKeys()) return
+  const loadRealData = async (preset = datePreset, overrideAccountId?: string, forceRefresh = false) => {
+    const targetAccountId = overrideAccountId || settings.fbAdAccountId
+    if (!settings.fbAccessToken && !settings.useAdminFbToken) return
+    if (!targetAccountId) return
+
     setIsLoading(true)
     setErrorMessage(null)
 
@@ -73,9 +76,10 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
-          adAccountId: settings.fbAdAccountId,
+          adAccountId: targetAccountId,
           useAdminToken: settings.useAdminFbToken,
           datePreset: preset,
+          refresh: forceRefresh,
         }),
       })
 
@@ -98,10 +102,22 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    if (mounted && settings.hasFbKeys()) {
+    if (mounted && (settings.useAdminFbToken || settings.fbAccessToken) && settings.fbAdAccountId) {
       loadRealData(datePreset)
     }
   }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken, datePreset])
+
+  // Responde imediatamente ao evento global de troca de conta disparado no Topbar
+  useEffect(() => {
+    const handleAccountSwitched = (e: Event) => {
+      const customEvent = e as CustomEvent<{ adAccountId: string }>
+      if (customEvent.detail?.adAccountId) {
+        loadRealData(datePreset, customEvent.detail.adAccountId)
+      }
+    }
+    window.addEventListener('adpilot:account-switched', handleAccountSwitched)
+    return () => window.removeEventListener('adpilot:account-switched', handleAccountSwitched)
+  }, [datePreset, settings.fbAccessToken, settings.useAdminFbToken])
 
   // 1. Filtrar estritamente campanhas operacionais (ativas e pausadas).
   // Campanhas arquivadas NUNCA entram em cálculos de métricas, totais, ROAS ou parâmetros da conta!
@@ -262,7 +278,7 @@ export default function DashboardPage() {
           </Select>
 
           {mounted && settings.hasFbKeys() && (
-            <Button variant="outline" size="sm" onClick={() => loadRealData(datePreset)} disabled={isLoading}>
+            <Button variant="outline" size="sm" onClick={() => loadRealData(datePreset, undefined, true)} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Sincronizar
             </Button>

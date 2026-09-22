@@ -13,9 +13,13 @@ import {
   type FacebookConfig,
 } from '@/lib/facebook'
 
+// Cache em memória para alternância instantânea entre contas (TTL 60 segundos)
+const campaignsCache = new Map<string, { data: any; expiresAt: number }>()
+const CAMPAIGNS_CACHE_TTL = 60 * 1000
+
 export async function POST(request: Request) {
   try {
-    const { accessToken: clientToken, adAccountId, useAdminToken, datePreset } = await request.json()
+    const { accessToken: clientToken, adAccountId, useAdminToken, datePreset, refresh } = await request.json().catch(() => ({}))
 
     let accessToken = clientToken
 
@@ -40,9 +44,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Credenciais não configuradas' }, { status: 400 })
     }
 
-    const config: FacebookConfig = { accessToken, adAccountId }
-
     const effectivePreset = datePreset || 'maximum'
+    const cacheKey = `${adAccountId}_${effectivePreset}`
+
+    if (!refresh) {
+      const cached = campaignsCache.get(cacheKey)
+      if (cached && Date.now() < cached.expiresAt) {
+        return NextResponse.json(cached.data)
+      }
+    }
+
+    const config: FacebookConfig = { accessToken, adAccountId }
 
     const [campaigns, insights, daily] = await Promise.all([
       getCampaigns(config),
@@ -130,7 +142,10 @@ export async function POST(request: Request) {
       messages: extractMessages(d.actions),
     }))
 
-    return NextResponse.json({ campaigns: combined, dailyMetrics })
+    const payload = { campaigns: combined, dailyMetrics }
+    campaignsCache.set(cacheKey, { data: payload, expiresAt: Date.now() + CAMPAIGNS_CACHE_TTL })
+
+    return NextResponse.json(payload)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro ao buscar dados'
     return NextResponse.json({ error: message }, { status: 500 })

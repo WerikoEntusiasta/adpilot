@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Cache em memória para troca e listagem instantânea de contas (TTL 2 minutos)
+const accountsCache = new Map<string, { accounts: any[]; expiresAt: number }>()
+const ACCOUNTS_CACHE_TTL = 120 * 1000
+
 export async function POST(request: Request) {
   try {
-    const { accessToken: clientToken, useAdminToken } = await request.json()
+    const { accessToken: clientToken, useAdminToken, refresh } = await request.json().catch(() => ({}))
 
     let accessToken = clientToken
 
@@ -34,6 +38,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nenhum Access Token configurado' }, { status: 400 })
     }
 
+    const cacheKey = accessToken.slice(-15)
+    if (!refresh) {
+      const cached = accountsCache.get(cacheKey)
+      if (cached && Date.now() < cached.expiresAt) {
+        return NextResponse.json({ accounts: cached.accounts, cached: true })
+      }
+    }
+
     const url = new URL('https://graph.facebook.com/v21.0/me/adaccounts')
     url.searchParams.set('access_token', accessToken.trim())
     url.searchParams.set('fields', 'name,account_id,id,currency,account_status')
@@ -52,6 +64,8 @@ export async function POST(request: Request) {
       name: acc.name || `Conta ${acc.account_id}`,
       currency: acc.currency || 'BRL',
     }))
+
+    accountsCache.set(cacheKey, { accounts, expiresAt: Date.now() + ACCOUNTS_CACHE_TTL })
 
     return NextResponse.json({ accounts })
   } catch (error) {

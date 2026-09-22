@@ -43,7 +43,8 @@ export default function GuardianPage() {
     setMounted(true)
   }, [])
 
-  const handleRunScan = async () => {
+  const handleRunScan = async (overrideAccountId?: string) => {
+    const targetAccountId = overrideAccountId || settings.fbAdAccountId
     const activeRules = guardian.rules.filter(r => r.enabled)
     if (activeRules.length === 0) {
       setScanFeedback('Nenhuma regra está ativada. Ative as chaves desejadas na seção "Configuração das Regras de Segurança" abaixo para o Guardião monitorar seus anúncios.')
@@ -58,7 +59,7 @@ export default function GuardianPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
-          adAccountId: settings.fbAdAccountId,
+          adAccountId: targetAccountId,
           useAdminToken: settings.useAdminFbToken,
           rules: guardian.rules,
         }),
@@ -90,6 +91,19 @@ export default function GuardianPage() {
       handleRunScan()
     }
   }, [mounted])
+
+  // Atualização instantânea ao trocar de conta no Topbar
+  useEffect(() => {
+    const handleAccountSwitched = (e: Event) => {
+      const customEvent = e as CustomEvent<{ adAccountId: string }>
+      if (customEvent.detail?.adAccountId) {
+        guardian.setIncidents([])
+        handleRunScan(customEvent.detail.adAccountId)
+      }
+    }
+    window.addEventListener('adpilot:account-switched', handleAccountSwitched)
+    return () => window.removeEventListener('adpilot:account-switched', handleAccountSwitched)
+  }, [guardian.rules, settings.fbAccessToken, settings.useAdminFbToken])
 
   const handlePauseAdIncident = async (incident: GuardianIncident) => {
     setActionLoadingId(incident.id)

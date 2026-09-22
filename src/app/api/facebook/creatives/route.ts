@@ -207,10 +207,14 @@ const mockCreatives: CreativeItem[] = [
   },
 ]
 
+// Cache em memória para alternância instantânea entre contas (TTL 60 segundos)
+const creativesCache = new Map<string, { data: any; expiresAt: number }>()
+const CREATIVES_CACHE_TTL = 60 * 1000
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { accessToken, adAccountId, useAdminToken, datePreset = 'maximum' } = body
+    const { accessToken, adAccountId, useAdminToken, datePreset = 'maximum', refresh } = body
 
     let resolvedToken = accessToken
     let resolvedAccountId = adAccountId
@@ -231,6 +235,14 @@ export async function POST(req: NextRequest) {
         source: 'mock',
         message: 'Utilizando dados de demonstração (conecte suas chaves do Facebook nas Configurações para dados reais).'
       })
+    }
+
+    const cacheKey = `${resolvedAccountId}_${datePreset}`
+    if (!refresh) {
+      const cached = creativesCache.get(cacheKey)
+      if (cached && Date.now() < cached.expiresAt) {
+        return NextResponse.json(cached.data)
+      }
     }
 
     const config: FacebookConfig = {
@@ -442,12 +454,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const responsePayload = {
       creatives: processed,
       isRealData: true,
       source: 'facebook_api',
       total: processed.length
-    })
+    }
+    creativesCache.set(cacheKey, { data: responsePayload, expiresAt: Date.now() + CREATIVES_CACHE_TTL })
+
+    return NextResponse.json(responsePayload)
 
   } catch (error) {
     console.error('Erro na rota /api/facebook/creatives:', error)

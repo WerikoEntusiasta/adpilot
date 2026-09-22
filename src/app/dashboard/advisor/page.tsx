@@ -87,7 +87,9 @@ export default function AdvisorPage() {
   }, [mounted, auth.user?.id])
 
   // Busca e sincroniza as campanhas reais do Facebook
-  const loadCampaigns = async (): Promise<Campaign[]> => {
+  const loadCampaigns = async (overrideAccountId?: string): Promise<Campaign[]> => {
+    const targetAccountId = overrideAccountId || settings.fbAdAccountId
+    if (!targetAccountId) return []
     setIsLoadingCampaigns(true)
     try {
       const res = await fetch('/api/facebook/campaigns', {
@@ -98,7 +100,7 @@ export default function AdvisorPage() {
         },
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
-          adAccountId: settings.fbAdAccountId,
+          adAccountId: targetAccountId,
           useAdminToken: settings.useAdminFbToken
         })
       })
@@ -119,10 +121,22 @@ export default function AdvisorPage() {
 
   // Carrega as campanhas reais do Facebook automaticamente se montado
   useEffect(() => {
-    if (mounted) {
+    if (mounted && (settings.useAdminFbToken || settings.fbAccessToken) && settings.fbAdAccountId) {
       loadCampaigns()
     }
   }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken])
+
+  // Atualização instantânea ao trocar conta no Topbar
+  useEffect(() => {
+    const handleAccountSwitched = (e: Event) => {
+      const customEvent = e as CustomEvent<{ adAccountId: string }>
+      if (customEvent.detail?.adAccountId) {
+        loadCampaigns(customEvent.detail.adAccountId)
+      }
+    }
+    window.addEventListener('adpilot:account-switched', handleAccountSwitched)
+    return () => window.removeEventListener('adpilot:account-switched', handleAccountSwitched)
+  }, [settings.fbAccessToken, settings.useAdminFbToken])
 
   // Função disparada ao clicar em "Analisar Minhas Campanhas Agora"
   const handleAnalyzeReal = async () => {

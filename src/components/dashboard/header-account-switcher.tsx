@@ -33,7 +33,7 @@ export function HeaderAccountSwitcher() {
     setMounted(true)
   }, [])
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = async (forceRefresh = false) => {
     setIsLoading(true)
     try {
       const res = await fetch('/api/facebook/accounts', {
@@ -45,6 +45,7 @@ export function HeaderAccountSwitcher() {
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
           useAdminToken: settings.useAdminFbToken,
+          refresh: forceRefresh,
         }),
       })
       const data = await res.json()
@@ -68,12 +69,28 @@ export function HeaderAccountSwitcher() {
     }
   }, [mounted, settings.fbAccessToken, settings.useAdminFbToken, auth.user?.id])
 
-  const selectAccount = async (adAccountId: string) => {
-    if (adAccountId === settings.fbAdAccountId) return
-    settings.setFbKeys({ fbAdAccountId })
+  const [isSwitching, setIsSwitching] = useState(false)
 
+  const selectAccount = (adAccountId: string) => {
+    if (adAccountId === settings.fbAdAccountId) return
+
+    // 1. Feedback visual imediato
+    setIsSwitching(true)
+    setTimeout(() => setIsSwitching(false), 600)
+
+    // 2. Atualiza estado global no Zustand de forma instantânea (0ms)
+    settings.setFbKeys({ fbAdAccountId: adAccountId })
+
+    // 3. Dispara evento global para que qualquer componente da página atualize no mesmo instante
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('adpilot:account-switched', { detail: { adAccountId } })
+      )
+    }
+
+    // 4. Salva no banco de dados de forma assíncrona em segundo plano (sem travar a tela)
     if (auth.user?.id) {
-      await fetch('/api/user/settings', {
+      fetch('/api/user/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,9 +102,6 @@ export function HeaderAccountSwitcher() {
         }),
       }).catch(console.error)
     }
-
-    // Recarrega a página para atualizar métricas de todas as abas e componentes
-    window.location.reload()
   }
 
   if (!mounted) return null
@@ -110,10 +124,15 @@ export function HeaderAccountSwitcher() {
         <Button
           variant="outline"
           size="sm"
-          className="h-8 max-w-[280px] sm:max-w-[360px] gap-2 px-2.5 bg-background/50 border-border hover:bg-accent text-xs font-medium justify-between shadow-xs cursor-pointer"
+          className={`h-8 max-w-[280px] sm:max-w-[360px] gap-2 px-2.5 bg-background/50 border-border hover:bg-accent text-xs font-medium justify-between shadow-xs cursor-pointer transition-all ${
+            isSwitching ? 'ring-2 ring-primary/50 bg-primary/10' : ''
+          }`}
+          title="Alternar Conta de Anúncios (Instantâneo)"
         >
           <div className="flex items-center gap-2 truncate">
-            <div className="h-4 w-4 rounded bg-primary/20 text-primary flex items-center justify-center shrink-0">
+            <div className={`h-4 w-4 rounded flex items-center justify-center shrink-0 transition-colors ${
+              isSwitching ? 'bg-primary text-primary-foreground animate-spin' : 'bg-primary/20 text-primary'
+            }`}>
               <Layers className="h-3 w-3" />
             </div>
             <span className="truncate">{displayName}</span>
@@ -130,7 +149,7 @@ export function HeaderAccountSwitcher() {
             className="h-6 w-6"
             onClick={(e) => {
               e.stopPropagation()
-              fetchAccounts()
+              fetchAccounts(true)
             }}
             disabled={isLoading}
             title="Atualizar lista de contas"

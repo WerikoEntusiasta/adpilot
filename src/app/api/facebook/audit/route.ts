@@ -173,10 +173,14 @@ const mockAuditReport: AccountAuditReport = {
   ]
 }
 
+// Cache em memória para alternância instantânea entre contas (TTL 60 segundos)
+const auditCache = new Map<string, { data: any; expiresAt: number }>()
+const AUDIT_CACHE_TTL = 60 * 1000
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { accessToken: clientToken, adAccountId, useAdminToken, datePreset = 'maximum' } = body
+    const { accessToken: clientToken, adAccountId, useAdminToken, datePreset = 'maximum', refresh } = body
 
     let resolvedToken = clientToken
     let resolvedAccountId = adAccountId
@@ -211,6 +215,14 @@ export async function POST(req: NextRequest) {
     // Se não tiver credenciais, retorna o relatório de demonstração rico
     if (!resolvedToken || !resolvedAccountId) {
       return NextResponse.json(mockAuditReport)
+    }
+
+    const cacheKey = `${resolvedAccountId}_${datePreset}`
+    if (!refresh) {
+      const cached = auditCache.get(cacheKey)
+      if (cached && Date.now() < cached.expiresAt) {
+        return NextResponse.json(cached.data)
+      }
     }
 
     const config: FacebookConfig = {
@@ -518,6 +530,8 @@ export async function POST(req: NextRequest) {
       pillars,
       checklist,
     }
+
+    auditCache.set(cacheKey, { data: report, expiresAt: Date.now() + AUDIT_CACHE_TTL })
 
     return NextResponse.json(report)
   } catch (err) {

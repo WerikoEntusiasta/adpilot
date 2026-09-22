@@ -27,8 +27,11 @@ export default function CampaignsPage() {
     setMounted(true)
   }, [])
 
-  const loadRealCampaigns = async (preset = datePreset) => {
-    if (!settings.hasFbKeys()) return
+  const loadRealCampaigns = async (preset = datePreset, overrideAccountId?: string, forceRefresh = false) => {
+    const targetAccountId = overrideAccountId || settings.fbAdAccountId
+    if (!settings.fbAccessToken && !settings.useAdminFbToken) return
+    if (!targetAccountId) return
+
     setIsLoading(true)
     setErrorMsg(null)
     try {
@@ -37,9 +40,10 @@ export default function CampaignsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
-          adAccountId: settings.fbAdAccountId,
+          adAccountId: targetAccountId,
           useAdminToken: settings.useAdminFbToken,
           datePreset: preset,
+          refresh: forceRefresh,
         }),
       })
 
@@ -59,10 +63,22 @@ export default function CampaignsPage() {
   }
 
   useEffect(() => {
-    if (mounted && settings.hasFbKeys()) {
+    if (mounted && (settings.useAdminFbToken || settings.fbAccessToken) && settings.fbAdAccountId) {
       loadRealCampaigns(datePreset)
     }
-  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, datePreset])
+  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken, datePreset])
+
+  // Atualização instantânea ao trocar conta no Topbar
+  useEffect(() => {
+    const handleAccountSwitched = (e: Event) => {
+      const customEvent = e as CustomEvent<{ adAccountId: string }>
+      if (customEvent.detail?.adAccountId) {
+        loadRealCampaigns(datePreset, customEvent.detail.adAccountId)
+      }
+    }
+    window.addEventListener('adpilot:account-switched', handleAccountSwitched)
+    return () => window.removeEventListener('adpilot:account-switched', handleAccountSwitched)
+  }, [datePreset, settings.fbAccessToken, settings.useAdminFbToken])
 
   // Contagens por status real
   const activeCount = useMemo(() => campaigns.filter(c => c.status === 'ACTIVE').length, [campaigns])
@@ -109,7 +125,7 @@ export default function CampaignsPage() {
         </div>
 
         {mounted && settings.hasFbKeys() && (
-          <Button variant="outline" size="sm" onClick={() => loadRealCampaigns(datePreset)} disabled={isLoading}>
+          <Button variant="outline" size="sm" onClick={() => loadRealCampaigns(datePreset, undefined, true)} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>

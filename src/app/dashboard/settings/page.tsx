@@ -334,11 +334,14 @@ function SettingsContent() {
               {adAccounts.length > 0 ? (
                 <Select
                   value={settings.fbAdAccountId}
-                  onValueChange={async (val) => {
+                  onValueChange={(val) => {
                     settings.setFbKeys({ fbAdAccountId: val })
-                    // Salvar imediatamente no banco de dados para sincronizar
+                    if (typeof window !== 'undefined') {
+                      window.dispatchEvent(new CustomEvent('adpilot:account-switched', { detail: { adAccountId: val } }))
+                    }
+                    // Salvar imediatamente no banco de dados para sincronizar de forma assíncrona
                     if (auth.user?.id) {
-                      await fetch('/api/user/settings', {
+                      fetch('/api/user/settings', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-User-Id': auth.user.id },
                         body: JSON.stringify({

@@ -43,7 +43,8 @@ export default function AccountAuditPage() {
     setMounted(true)
   }, [])
 
-  const fetchAudit = async () => {
+  const fetchAudit = async (overrideAccountId?: string, forceRefresh = false) => {
+    const targetAccountId = overrideAccountId || settings.fbAdAccountId
     setIsLoading(true)
     try {
       const res = await fetch('/api/facebook/audit', {
@@ -54,8 +55,9 @@ export default function AccountAuditPage() {
         },
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
-          adAccountId: settings.fbAdAccountId,
+          adAccountId: targetAccountId,
           useAdminToken: settings.useAdminFbToken,
+          refresh: forceRefresh,
         }),
       })
       const data = await res.json()
@@ -72,6 +74,18 @@ export default function AccountAuditPage() {
       fetchAudit()
     }
   }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken, auth.user?.id])
+
+  // Atualização instantânea ao trocar conta no Topbar
+  useEffect(() => {
+    const handleAccountSwitched = (e: Event) => {
+      const customEvent = e as CustomEvent<{ adAccountId: string }>
+      if (customEvent.detail?.adAccountId) {
+        fetchAudit(customEvent.detail.adAccountId)
+      }
+    }
+    window.addEventListener('adpilot:account-switched', handleAccountSwitched)
+    return () => window.removeEventListener('adpilot:account-switched', handleAccountSwitched)
+  }, [settings.fbAccessToken, settings.useAdminFbToken, auth.user?.id])
 
   if (!mounted) return null
 
