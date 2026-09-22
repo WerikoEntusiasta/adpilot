@@ -11,6 +11,12 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   Trophy,
   Flame,
   AlertTriangle,
@@ -28,7 +34,8 @@ import {
   Pause,
   ExternalLink,
   Zap,
-  Info
+  Info,
+  Maximize2
 } from 'lucide-react'
 
 export default function CreativesPage() {
@@ -42,6 +49,7 @@ export default function CreativesPage() {
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'WARNING_OR_FATIGUED' | 'WINNERS'>('ALL')
   const [sortBy, setSortBy] = useState<'roas' | 'cpa' | 'ctr' | 'clicks' | 'frequency' | 'spend'>('roas')
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
+  const [selectedPreview, setSelectedPreview] = useState<CreativeItem | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -322,14 +330,19 @@ export default function CreativesPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredAndSorted.map((item) => (
             <Card key={item.id} className="overflow-hidden border bg-card flex flex-col justify-between hover:shadow-md transition-shadow">
-              {/* Topo do Card com Imagem / Thumbnail */}
+              {/* Topo do Card com Imagem / Thumbnail em Alta Resolução */}
               <div>
-                <div className="relative aspect-video w-full bg-muted/60 overflow-hidden border-b flex items-center justify-center">
-                  {item.thumbnailUrl || item.imageUrl ? (
+                <div
+                  className="relative aspect-video w-full bg-muted/60 overflow-hidden border-b flex items-center justify-center cursor-pointer group/media"
+                  onClick={() => setSelectedPreview(item)}
+                  title="Clique para ampliar em Alta Resolução"
+                >
+                  {item.imageUrl || item.thumbnailUrl ? (
                     <img
-                      src={item.thumbnailUrl || item.imageUrl}
+                      src={item.imageUrl || item.thumbnailUrl}
                       alt={item.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover/media:scale-105 transition-transform duration-300"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-muted-foreground gap-1.5 p-4 text-center">
@@ -337,6 +350,12 @@ export default function CreativesPage() {
                       <span className="text-xs">Mídia do Anúncio</span>
                     </div>
                   )}
+
+                  {/* Hover Zoom Overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/media:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-medium text-xs backdrop-blur-[2px]">
+                    <Maximize2 className="h-4 w-4" />
+                    <span>Ampliar em Alta Resolução</span>
+                  </div>
 
                   {/* Badges no Criativo */}
                   <div className="absolute top-2 left-2 flex flex-wrap gap-1">
@@ -487,6 +506,69 @@ export default function CreativesPage() {
           ))}
         </div>
       )}
+
+      {/* Modal de Prévia em Alta Resolução */}
+      <Dialog open={!!selectedPreview} onOpenChange={(open) => !open && setSelectedPreview(null)}>
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-6">
+          {selectedPreview && (
+            <div className="space-y-4">
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                    {selectedPreview.status === 'ACTIVE' ? '● Veiculando' : '⏸ Pausado'}
+                  </span>
+                  <DialogTitle className="text-lg">{selectedPreview.title}</DialogTitle>
+                </div>
+              </DialogHeader>
+
+              {/* Imagem Full Res */}
+              <div className="rounded-xl overflow-hidden border bg-black/5 flex items-center justify-center max-h-[460px]">
+                {selectedPreview.imageUrl || selectedPreview.thumbnailUrl ? (
+                  <img
+                    src={selectedPreview.imageUrl || selectedPreview.thumbnailUrl}
+                    alt={selectedPreview.title}
+                    className="w-full h-full object-contain max-h-[440px]"
+                  />
+                ) : (
+                  <div className="p-16 text-center text-muted-foreground">Sem imagem disponível</div>
+                )}
+              </div>
+
+              {/* Texto do anúncio */}
+              <div className="p-4 rounded-xl border bg-muted/30 space-y-1.5">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                  Texto Principal (Copy do Anúncio)
+                </span>
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                  {selectedPreview.body}
+                </p>
+              </div>
+
+              {/* Métricas do Anúncio */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="p-3 rounded-lg border bg-card">
+                  <span className="text-muted-foreground block text-[11px]">ROAS da Peça</span>
+                  <span className="text-base font-bold text-emerald-500 font-mono">
+                    {selectedPreview.roas > 0 ? `${selectedPreview.roas.toFixed(2)}x` : '—'}
+                  </span>
+                </div>
+                <div className="p-3 rounded-lg border bg-card">
+                  <span className="text-muted-foreground block text-[11px]">Investimento Total</span>
+                  <span className="text-base font-bold font-mono">{formatCurrency(selectedPreview.spend)}</span>
+                </div>
+                <div className="p-3 rounded-lg border bg-card">
+                  <span className="text-muted-foreground block text-[11px]">Conversões</span>
+                  <span className="text-base font-bold font-mono">{selectedPreview.conversions}</span>
+                </div>
+                <div className="p-3 rounded-lg border bg-card">
+                  <span className="text-muted-foreground block text-[11px]">Frequência (Fadiga)</span>
+                  <span className="text-base font-bold font-mono">{selectedPreview.frequency.toFixed(2)}x</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -51,8 +51,8 @@ const mockCreatives: CreativeItem[] = [
     adsetId: 'adset_001',
     title: 'Como aumentei meu faturamento em 3x sem aumentar o tempo de trabalho',
     body: 'Descubra a metodologia validada por mais de 500 empresários. Toque no botão e comece hoje mesmo.',
-    imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=600&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=300&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=90',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=90',
     spend: 1420.50,
     impressions: 48900,
     clicks: 1850,
@@ -82,8 +82,8 @@ const mockCreatives: CreativeItem[] = [
     adsetId: 'adset_002',
     title: 'Pare de perder tempo com processos manuais',
     body: 'Deslize para o lado para ver o passo a passo completo da automação que mudou nosso jogo.',
-    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=300&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=90',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=90',
     spend: 890.30,
     impressions: 29100,
     clicks: 1240,
@@ -113,8 +113,8 @@ const mockCreatives: CreativeItem[] = [
     adsetId: 'adset_003',
     title: 'Últimas horas com condição especial',
     body: 'Você visitou nosso site mas não concluiu sua inscrição. Garanta seu acesso exclusivo agora.',
-    imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=600&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=300&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=90',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=90',
     spend: 640.00,
     impressions: 34500,
     clicks: 410,
@@ -144,8 +144,8 @@ const mockCreatives: CreativeItem[] = [
     adsetId: 'adset_004',
     title: 'Fale diretamente com nosso especialista no WhatsApp',
     body: 'Tire suas dúvidas em tempo real e receba uma demonstração gratuita sem compromisso.',
-    imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=300&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=90',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=90',
     spend: 420.00,
     impressions: 16200,
     clicks: 680,
@@ -175,8 +175,8 @@ const mockCreatives: CreativeItem[] = [
     adsetId: 'adset_001',
     title: 'Desconto imperdível de fim de semana',
     body: 'Aproveite enquanto durarem os estoques. Condição exclusiva para hoje.',
-    imageUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=600&q=80',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=300&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=1200&q=90',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=1200&q=90',
     spend: 950.00,
     impressions: 62000,
     clicks: 390,
@@ -312,6 +312,13 @@ export async function POST(req: NextRequest) {
       const isActive = !isArchived && (rawStatus === 'ACTIVE' || effStatus === 'ACTIVE')
       const status: 'ACTIVE' | 'PAUSED' | 'ARCHIVED' = isArchived ? 'ARCHIVED' : isActive ? 'ACTIVE' : 'PAUSED'
 
+      const bestImage =
+        ad.creative?.image_url ||
+        (ad.creative as any)?.object_story_spec?.link_data?.picture ||
+        (ad.creative as any)?.object_story_spec?.video_data?.image_url ||
+        ad.creative?.thumbnail_url ||
+        undefined
+
       return {
         id: ad.id,
         name: ad.name,
@@ -320,8 +327,8 @@ export async function POST(req: NextRequest) {
         adsetId: ad.adset_id,
         title: ad.creative?.title || ad.creative?.name || ad.name,
         body: ad.creative?.body || 'Anúncio publicado na conta do Meta Ads.',
-        imageUrl: ad.creative?.image_url || undefined,
-        thumbnailUrl: ad.creative?.thumbnail_url || ad.creative?.image_url || undefined,
+        imageUrl: bestImage,
+        thumbnailUrl: bestImage,
         spend,
         impressions,
         clicks,
