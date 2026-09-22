@@ -85,11 +85,48 @@ export async function POST(request: Request) {
     }
 
     const { content } = await parseAiCompletionResponse(res)
-    const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const parsed = JSON.parse(cleaned)
-    return NextResponse.json({ suggestions: parsed.suggestions || [] })
+    
+    let parsed: any = null
+    try {
+      const cleaned = content.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim()
+      parsed = JSON.parse(cleaned)
+    } catch {
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(jsonMatch[0])
+        } catch {}
+      }
+    }
+
+    if (parsed && Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0) {
+      return NextResponse.json({ suggestions: parsed.suggestions })
+    }
+
+    // Se o modelo retornou texto livre de análise sem o envelope JSON esperado, converte para sugestão estruturada
+    if (content && content.trim().length > 10) {
+      const sanitizedText = content.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim()
+      return NextResponse.json({
+        suggestions: [
+          {
+            id: 'sug_ai_analysis',
+            type: 'improvement',
+            impact: 'high',
+            title: 'Diagnóstico das Campanhas por Especialista IA',
+            description: sanitizedText,
+            metrics: { estimatedImprovement: 'Otimização Estratégica' },
+            action: {
+              type: 'review_strategy',
+              description: 'Revisar e implementar as diretrizes detalhadas pela IA'
+            }
+          }
+        ]
+      })
+    }
+
+    return NextResponse.json({ suggestions: [] })
   } catch (error) {
     console.error('Erro no analyze:', error)
-    return NextResponse.json({ error: 'Erro ao processar análise da IA' }, { status: 500 })
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Erro ao processar análise da IA' }, { status: 500 })
   }
 }

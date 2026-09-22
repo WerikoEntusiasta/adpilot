@@ -19,10 +19,13 @@ import {
   LifeBuoy,
   HelpCircle,
   Trophy,
-  ShieldAlert
+  ShieldAlert,
+  Sparkles
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-store'
 import { useSettings } from '@/lib/store'
+import { HeaderAccountSwitcher } from '@/components/dashboard/header-account-switcher'
+import { WhatsNewModal } from '@/components/dashboard/whats-new-modal'
 
 const navItems = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
@@ -31,6 +34,7 @@ const navItems = [
   { href: '/dashboard/guardian', label: 'Guardião', icon: ShieldAlert },
   { href: '/dashboard/advisor', label: 'IA Advisor', icon: Brain },
   { href: '/dashboard/planner', label: 'Planejador', icon: CalendarPlus },
+  { href: '/dashboard/changelog', label: 'O Que Há de Novo', icon: Sparkles },
   { href: '/dashboard/meta-support', label: 'Central de Ajuda', icon: HelpCircle },
   { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy },
   { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
@@ -184,16 +188,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <div className="flex-1" />
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 py-2.5">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <HeaderAccountSwitcher />
+          </div>
+
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">
               {userInitial}
@@ -204,6 +211,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Page content */}
         <main className="flex-1 p-6 relative">
+          <WhatsNewModal />
           {auth.user?.lgpdConsent === false && (
             <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-card border shadow-2xl rounded-xl p-6 max-w-2xl w-full">

@@ -20,6 +20,9 @@ export interface CreativeItem {
   body: string
   imageUrl?: string
   thumbnailUrl?: string
+  videoUrl?: string
+  videoId?: string
+  isVideo?: boolean
   spend: number
   impressions: number
   clicks: number
@@ -53,6 +56,8 @@ const mockCreatives: CreativeItem[] = [
     body: 'Descubra a metodologia validada por mais de 500 empresários. Toque no botão e comece hoje mesmo.',
     imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=90',
     thumbnailUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=90',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    isVideo: true,
     spend: 1420.50,
     impressions: 48900,
     clicks: 1850,
@@ -146,6 +151,8 @@ const mockCreatives: CreativeItem[] = [
     body: 'Tire suas dúvidas em tempo real e receba uma demonstração gratuita sem compromisso.',
     imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=90',
     thumbnailUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=90',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    isVideo: true,
     spend: 420.00,
     impressions: 16200,
     clicks: 680,
@@ -260,6 +267,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Identificar e buscar fontes diretas de vídeo para anúncios em vídeo
+    const videoMap = new Map<string, string>()
+    const videoIdsToFetch: string[] = []
+    for (const ad of ads) {
+      const vid = ad.creative?.video_id || (ad.creative as any)?.object_story_spec?.video_data?.video_id
+      if (vid && !videoIdsToFetch.includes(vid)) {
+        videoIdsToFetch.push(vid)
+      }
+    }
+
+    if (videoIdsToFetch.length > 0 && resolvedToken) {
+      await Promise.allSettled(
+        videoIdsToFetch.slice(0, 25).map(async (vid) => {
+          try {
+            const vRes = await fetch(`https://graph.facebook.com/v21.0/${vid}?fields=source,picture&access_token=${resolvedToken}`)
+            const vData = await vRes.json()
+            if (vData.source) {
+              videoMap.set(vid, vData.source)
+            }
+          } catch (err) {
+            console.warn(`Erro ao buscar vídeo do Facebook (${vid}):`, err)
+          }
+        })
+      )
+    }
+
     // Processar cada anúncio
     const processed: CreativeItem[] = ads.map(ad => {
       const ins = insightsByAdId.get(ad.id) || {}
@@ -321,6 +354,15 @@ export async function POST(req: NextRequest) {
       )
       const status: 'ACTIVE' | 'PAUSED' | 'ARCHIVED' = isArchived ? 'ARCHIVED' : isActive ? 'ACTIVE' : 'PAUSED'
 
+      const videoId = ad.creative?.video_id || (ad.creative as any)?.object_story_spec?.video_data?.video_id || undefined
+      const directVideoUrl = videoId ? videoMap.get(videoId) : undefined
+      const isVideo = Boolean(
+        directVideoUrl ||
+        videoId ||
+        (ad.creative as any)?.object_story_spec?.video_data ||
+        (ad.name && /vídeo|video|reels|stories|tiktok|mp4/i.test(ad.name))
+      )
+
       const bestImage =
         ad.creative?.image_url ||
         (ad.creative as any)?.object_story_spec?.link_data?.picture ||
@@ -338,6 +380,9 @@ export async function POST(req: NextRequest) {
         body: ad.creative?.body || 'Anúncio publicado na conta do Meta Ads.',
         imageUrl: bestImage,
         thumbnailUrl: bestImage,
+        videoUrl: directVideoUrl,
+        videoId,
+        isVideo,
         spend,
         impressions,
         clicks,

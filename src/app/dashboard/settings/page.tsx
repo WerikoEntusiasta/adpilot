@@ -334,7 +334,20 @@ function SettingsContent() {
               {adAccounts.length > 0 ? (
                 <Select
                   value={settings.fbAdAccountId}
-                  onValueChange={(val) => settings.setFbKeys({ fbAdAccountId: val })}
+                  onValueChange={async (val) => {
+                    settings.setFbKeys({ fbAdAccountId: val })
+                    // Salvar imediatamente no banco de dados para sincronizar
+                    if (auth.user?.id) {
+                      await fetch('/api/user/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-User-Id': auth.user.id },
+                        body: JSON.stringify({
+                          fbAdAccountId: val,
+                          ...(settings.fbAccessToken ? { fbAccessToken: settings.fbAccessToken } : {})
+                        })
+                      }).catch(console.error)
+                    }
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione uma Conta de Anúncios" />
@@ -377,7 +390,11 @@ function SettingsContent() {
           )}
 
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={handleValidateFb} disabled={isValidatingFb || !settings.fbAccessToken || !settings.fbAdAccountId}>
+            <Button
+              variant="outline"
+              onClick={handleValidateFb}
+              disabled={isValidatingFb || (!settings.fbAccessToken && !settings.useAdminFbToken) || !settings.fbAdAccountId}
+            >
               {isValidatingFb ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Shield className="h-4 w-4 mr-2" />}
               {isValidatingFb ? 'Testando Conexão...' : 'Testar Conexão com Facebook'}
             </Button>
@@ -389,19 +406,19 @@ function SettingsContent() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-User-Id': auth.user?.id || '' },
                     body: JSON.stringify({
-                      fbAccessToken: settings.fbAccessToken,
+                      ...(settings.fbAccessToken ? { fbAccessToken: settings.fbAccessToken } : {}),
                       fbAdAccountId: settings.fbAdAccountId
                     })
                   })
                   setSavedFb(true); 
-                  alert('✅ Configurações do Facebook salvas com sucesso!')
+                  alert('✅ Conta de anúncios e configurações salvas com sucesso!')
                   setTimeout(() => setSavedFb(false), 2000)
                 } catch (e) {
                   console.error(e)
                   alert('❌ Erro ao salvar configurações. Tente novamente.')
                 }
               }} 
-              disabled={!settings.fbAccessToken}
+              disabled={!settings.fbAdAccountId}
             >
               {savedFb ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Salvo!</> : 'Salvar Seleção'}
             </Button>

@@ -13,10 +13,25 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'O Administrador ainda não configurou um Token Global da Agência.' }, { status: 400 })
       }
       accessToken = global.fbAccessToken
+    } else if (!accessToken) {
+      const userId = request.headers.get('X-User-Id')
+      if (userId) {
+        const userSettings = await prisma.userSettings.findUnique({ where: { userId } })
+        if (userSettings?.fbAccessToken) {
+          accessToken = userSettings.fbAccessToken
+        }
+      }
+      // Se ainda não encontrou, tenta o token global do sistema como fallback
+      if (!accessToken) {
+        const global = await prisma.globalSetting.findUnique({ where: { id: 'GLOBAL' } })
+        if (global?.fbAccessToken) {
+          accessToken = global.fbAccessToken
+        }
+      }
     }
 
     if (!accessToken) {
-      return NextResponse.json({ error: 'Nenhum Access Token fornecido' }, { status: 400 })
+      return NextResponse.json({ error: 'Nenhum Access Token configurado' }, { status: 400 })
     }
 
     const url = new URL('https://graph.facebook.com/v21.0/me/adaccounts')

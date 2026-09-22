@@ -442,7 +442,7 @@ export async function getAccountAds(config: FacebookConfig): Promise<FacebookAd[
       '/' + accountId + '/ads',
       config,
       {
-        fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
+        fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,video_id,object_story_spec}',
         limit: '150',
       }
     )
@@ -455,7 +455,7 @@ export async function getAccountAds(config: FacebookConfig): Promise<FacebookAd[
     '/' + accountId + '/ads',
     config,
     {
-      fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
+      fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,video_id,object_story_spec}',
       filtering: JSON.stringify([
         { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'IN_PROCESS', 'WITH_ISSUES', 'PENDING_REVIEW', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED'] }
       ]),

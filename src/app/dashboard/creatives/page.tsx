@@ -35,7 +35,8 @@ import {
   ExternalLink,
   Zap,
   Info,
-  Maximize2
+  Maximize2,
+  Film
 } from 'lucide-react'
 
 export default function CreativesPage() {
@@ -50,6 +51,7 @@ export default function CreativesPage() {
   const [sortBy, setSortBy] = useState<'roas' | 'cpa' | 'ctr' | 'clicks' | 'frequency' | 'spend'>('roas')
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [selectedPreview, setSelectedPreview] = useState<CreativeItem | null>(null)
+  const [previewMode, setPreviewMode] = useState<'video' | 'image'>('video')
 
   useEffect(() => {
     setMounted(true)
@@ -82,6 +84,11 @@ export default function CreativesPage() {
       loadCreatives(datePreset)
     }
   }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, datePreset])
+
+  const handleOpenPreview = (item: CreativeItem) => {
+    setSelectedPreview(item)
+    setPreviewMode(item.videoUrl ? 'video' : 'image')
+  }
 
   const handleToggleAdStatus = async (item: CreativeItem) => {
     setActionLoadingId(item.id)
@@ -334,8 +341,8 @@ export default function CreativesPage() {
               <div>
                 <div
                   className="relative aspect-video w-full bg-muted/60 overflow-hidden border-b flex items-center justify-center cursor-pointer group/media"
-                  onClick={() => setSelectedPreview(item)}
-                  title="Clique para ampliar em Alta Resolução"
+                  onClick={() => handleOpenPreview(item)}
+                  title={item.isVideo || item.videoUrl ? 'Clique para reproduzir o criativo em vídeo' : 'Clique para ampliar em Alta Resolução'}
                 >
                   {item.imageUrl || item.thumbnailUrl ? (
                     <img
@@ -351,10 +358,29 @@ export default function CreativesPage() {
                     </div>
                   )}
 
-                  {/* Hover Zoom Overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/media:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-medium text-xs backdrop-blur-[2px]">
-                    <Maximize2 className="h-4 w-4" />
-                    <span>Ampliar em Alta Resolução</span>
+                  {/* Badge de Vídeo */}
+                  {(item.isVideo || item.videoUrl) && (
+                    <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md border border-white/10 z-10">
+                      <Play className="h-3 w-3 fill-white text-white" />
+                      <span>Vídeo</span>
+                    </div>
+                  )}
+
+                  {/* Hover Zoom / Play Overlay */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/media:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-medium text-xs backdrop-blur-[2px] z-20">
+                    {item.isVideo || item.videoUrl ? (
+                      <>
+                        <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                          <Play className="h-3.5 w-3.5 fill-white text-white ml-0.5" />
+                        </div>
+                        <span className="font-semibold">Reproduzir Vídeo</span>
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 className="h-4 w-4" />
+                        <span>Ampliar em Alta Resolução</span>
+                      </>
+                    )}
                   </div>
 
                   {/* Badges no Criativo */}
@@ -513,24 +539,70 @@ export default function CreativesPage() {
           {selectedPreview && (
             <div className="space-y-4">
               <DialogHeader>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary">
-                    {selectedPreview.status === 'ACTIVE' ? '● Veiculando' : '⏸ Pausado'}
-                  </span>
-                  <DialogTitle className="text-lg">{selectedPreview.title}</DialogTitle>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                      {selectedPreview.status === 'ACTIVE' ? '● Veiculando' : '⏸ Pausado'}
+                    </span>
+                    {(selectedPreview.isVideo || selectedPreview.videoUrl) && (
+                      <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/30 gap-1">
+                        <Film className="h-3 w-3" />
+                        Criativo em Vídeo
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Alternador de Modo: Vídeo / Imagem */}
+                  {selectedPreview.videoUrl && (selectedPreview.imageUrl || selectedPreview.thumbnailUrl) && (
+                    <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-lg border">
+                      <Button
+                        variant={previewMode === 'video' ? 'default' : 'ghost'}
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 px-2.5 cursor-pointer"
+                        onClick={() => setPreviewMode('video')}
+                      >
+                        <Play className="h-3 w-3 fill-current" />
+                        Vídeo
+                      </Button>
+                      <Button
+                        variant={previewMode === 'image' ? 'default' : 'ghost'}
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 px-2.5 cursor-pointer"
+                        onClick={() => setPreviewMode('image')}
+                      >
+                        <Eye className="h-3 w-3" />
+                        Miniatura HD
+                      </Button>
+                    </div>
+                  )}
                 </div>
+                <DialogTitle className="text-lg mt-1">{selectedPreview.title}</DialogTitle>
               </DialogHeader>
 
-              {/* Imagem Full Res */}
-              <div className="rounded-xl overflow-hidden border bg-black/5 flex items-center justify-center max-h-[460px]">
-                {selectedPreview.imageUrl || selectedPreview.thumbnailUrl ? (
+              {/* Mídia: Vídeo Player ou Imagem Full Res */}
+              <div className="rounded-xl overflow-hidden border bg-black flex items-center justify-center min-h-[320px] max-h-[480px] relative shadow-xl">
+                {selectedPreview.videoUrl && previewMode === 'video' ? (
+                  <video
+                    src={selectedPreview.videoUrl}
+                    controls
+                    autoPlay
+                    playsInline
+                    poster={selectedPreview.imageUrl || selectedPreview.thumbnailUrl}
+                    className="w-full h-full max-h-[480px] object-contain rounded-xl"
+                  >
+                    Seu navegador não suporta reprodução de vídeo HTML5.
+                  </video>
+                ) : selectedPreview.imageUrl || selectedPreview.thumbnailUrl ? (
                   <img
                     src={selectedPreview.imageUrl || selectedPreview.thumbnailUrl}
                     alt={selectedPreview.title}
-                    className="w-full h-full object-contain max-h-[440px]"
+                    className="w-full h-full object-contain max-h-[460px]"
                   />
                 ) : (
-                  <div className="p-16 text-center text-muted-foreground">Sem imagem disponível</div>
+                  <div className="p-16 text-center text-muted-foreground flex flex-col items-center gap-2">
+                    <Film className="h-10 w-10 text-muted-foreground/40" />
+                    <span>Mídia não disponível para reprodução</span>
+                  </div>
                 )}
               </div>
 

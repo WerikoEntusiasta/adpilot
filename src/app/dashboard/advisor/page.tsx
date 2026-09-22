@@ -33,6 +33,7 @@ export default function AdvisorPage() {
   const auth = useAuth()
   const [dailyInfo, setDailyInfo] = useState<{ date: string; createdAt: string } | null>(null)
   const [isLoadingDaily, setIsLoadingDaily] = useState(true)
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false)
   
   // Estado para garantir que a renderização do cliente e servidor batam (Next.js Hydration)
   const [mounted, setMounted] = useState(false)
@@ -58,8 +59,6 @@ export default function AdvisorPage() {
   ])
   const [chatInput, setChatInput] = useState('')
   const [isChatLoading, setIsChatLoading] = useState(false)
-
-  const hasFb = settings.hasFbKeys()
 
   // Sincroniza o estado de 'mounted' logo após o carregamento da página
   useEffect(() => {
@@ -87,46 +86,63 @@ export default function AdvisorPage() {
     }
   }, [mounted, auth.user?.id])
 
-  // Carrega as campanhas reais do Facebook automaticamente se o usuário tiver as chaves configuradas
-  useEffect(() => {
-    if (mounted && hasFb) {
-      fetch('/api/facebook/campaigns', {
+  // Busca e sincroniza as campanhas reais do Facebook
+  const loadCampaigns = async (): Promise<Campaign[]> => {
+    setIsLoadingCampaigns(true)
+    try {
+      const res = await fetch('/api/facebook/campaigns', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Id': auth.user?.id || ''
+        },
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
           adAccountId: settings.fbAdAccountId,
           useAdminToken: settings.useAdminFbToken
         })
       })
-      .then(r => r.json())
-      .then(data => {
-        if (data.campaigns) {
-          // Filtrar estritamente campanhas operacionais (arquivadas NUNCA servem como parâmetro)
-          const operational = data.campaigns.filter((c: any) => c.status !== 'ARCHIVED')
-          setRealCampaigns(operational)
-        }
-      })
-      .catch(e => console.error('Erro ao buscar campanhas do Facebook:', e))
+      const data = await res.json()
+      if (data.campaigns && Array.isArray(data.campaigns)) {
+        // Filtrar estritamente campanhas operacionais (arquivadas NUNCA servem como parâmetro)
+        const operational = data.campaigns.filter((c: any) => c.status !== 'ARCHIVED')
+        setRealCampaigns(operational)
+        return operational
+      }
+    } catch (e) {
+      console.error('Erro ao buscar campanhas do Facebook:', e)
+    } finally {
+      setIsLoadingCampaigns(false)
     }
-  }, [mounted, hasFb, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken])
+    return []
+  }
+
+  // Carrega as campanhas reais do Facebook automaticamente se montado
+  useEffect(() => {
+    if (mounted) {
+      loadCampaigns()
+    }
+  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken])
 
   // Função disparada ao clicar em "Analisar Minhas Campanhas Agora"
   const handleAnalyzeReal = async () => {
-    if (!settings.hasAiKeys()) {
-      alert('IA não está configurada pelo Administrador.')
-      return
-    }
-    
     setIsAnalyzingReal(true)
     try {
-      // 🚨 REMOVIDO mockSuggestions! Agora a IA analisa SÓ as campanhas reais.
-      // Se não tiver campanhas reais, manda um array vazio e a IA fará o trabalho de avisar o usuário.
+      let campaignsToAnalyze = realCampaigns
+
+      // Se ainda não tiver carregado campanhas, busca sob demanda
+      if (campaignsToAnalyze.length === 0) {
+        campaignsToAnalyze = await loadCampaigns()
+      }
+
       const res = await fetch('/api/ai/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Id': auth.user?.id || ''
+        },
         body: JSON.stringify({
-          campaigns: realCampaigns,
+          campaigns: campaignsToAnalyze,
           endpoint: settings.aiEndpoint,
           apiKey: settings.aiApiKey,
           model: settings.aiModel,
@@ -147,8 +163,8 @@ export default function AdvisorPage() {
         alert('Erro ao analisar: ' + (data.error || 'Desconhecido'))
       }
     } catch (e) {
-      console.error(e)
-      alert('Erro de conexão ao analisar.')
+      console.error('Erro de conexão ao analisar:', e)
+      alert('Erro de conexão ao analisar com a IA.')
     } finally {
       setIsAnalyzingReal(false)
     }
@@ -202,18 +218,6 @@ export default function AdvisorPage() {
 
   if (!mounted) return null
 
-  if (!settings.hasAiKeys()) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
-        <Brain className="h-16 w-16 text-muted-foreground opacity-50" />
-        <h2 className="text-xl font-semibold">IA Não Configurada</h2>
-        <p className="text-muted-foreground text-center max-w-md">
-          O Administrador ainda não configurou as credenciais da Inteligência Artificial. Volte mais tarde.
-        </p>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -234,16 +238,20 @@ export default function AdvisorPage() {
                 <div>
                   <h3 className="font-bold text-lg">Análise Dinâmica</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {realCampaigns.length > 0 ? `Conectado a ${realCampaigns.length} campanhas reais.` : 'Nenhuma campanha carregada ou Meta Ads não configurado.'}
+                    {isLoadingCampaigns 
+                      ? 'Sincronizando campanhas do Meta Ads...'
+                      : realCampaigns.length > 0 
+                        ? `Conectado a ${realCampaigns.length} campanha${realCampaigns.length > 1 ? 's' : ''} operacional${realCampaigns.length > 1 ? 'is' : ''}.` 
+                        : 'Nenhuma campanha carregada ou Meta Ads não sincronizado.'}
                   </p>
                 </div>
                 <Button 
                   onClick={handleAnalyzeReal} 
-                  disabled={isAnalyzingReal || realCampaigns.length === 0} 
-                  className="shadow-lg shadow-primary/20 shrink-0"
+                  disabled={isAnalyzingReal} 
+                  className="shadow-lg shadow-primary/20 shrink-0 cursor-pointer"
                 >
                   {isAnalyzingReal ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analisando Dados...</>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analisando com IA...</>
                   ) : (
                     <><RefreshCw className="mr-2 h-4 w-4" /> Analisar Minhas Campanhas Agora</>
                   )}

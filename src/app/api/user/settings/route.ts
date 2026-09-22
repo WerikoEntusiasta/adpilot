@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
@@ -26,13 +26,13 @@ export async function POST(request: Request) {
     const settings = await prisma.userSettings.upsert({
       where: { userId },
       update: {
-        ...(body.fbAccessToken !== undefined && { fbAccessToken: body.fbAccessToken }),
-        ...(body.fbAdAccountId !== undefined && { fbAdAccountId: body.fbAdAccountId })
+        ...(body.fbAccessToken ? { fbAccessToken: body.fbAccessToken } : {}),
+        ...(body.fbAdAccountId !== undefined ? { fbAdAccountId: body.fbAdAccountId } : {})
       },
       create: {
         userId,
-        fbAccessToken: body.fbAccessToken,
-        fbAdAccountId: body.fbAdAccountId
+        fbAccessToken: body.fbAccessToken || null,
+        fbAdAccountId: body.fbAdAccountId || null
       }
     })
     

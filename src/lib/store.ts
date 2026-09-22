@@ -46,7 +46,7 @@ export const useSettings = create<SettingsState>()(
       aiEndpoint: 'https://api.openai.com/v1',
       aiApiKey: '',
       aiModel: 'opencode-zen',
-      envAiConfigured: false,
+      envAiConfigured: true,
 
       stripeSecretKey: '',
       isPro: false,
@@ -65,7 +65,7 @@ export const useSettings = create<SettingsState>()(
       },
       hasAiKeys: () => {
         const s = get()
-        return !!(s.envAiConfigured || s.aiApiKey || (s.aiEndpoint && s.aiEndpoint !== 'https://api.openai.com/v1'))
+        return s.envAiConfigured !== false || !!s.aiApiKey || (!!s.aiEndpoint && s.aiEndpoint !== 'https://api.openai.com/v1')
       },
     }),
     { name: 'adpilot-settings' }
