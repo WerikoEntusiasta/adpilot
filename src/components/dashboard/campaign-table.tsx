@@ -87,64 +87,75 @@ export function CampaignTable({ campaigns, onStatusChange }: CampaignTableProps)
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((campaign) => {
-                  const label = campaign.resultLabel || (campaign.objective.includes('TRAFFIC') ? 'Cliques no Link' : 'Conversões')
-                  const resultValue = campaign.objective.includes('TRAFFIC')
-                    ? campaign.clicks
-                    : (campaign.conversions > 0 ? campaign.conversions : (campaign.clicks || 0))
+                {sorted.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <p className="text-sm font-medium text-foreground">Nenhuma campanha encontrada</p>
+                        <p className="text-xs text-muted-foreground">Não há campanhas correspondentes a este filtro ou período selecionado.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  sorted.map((campaign) => {
+                    const label = campaign.resultLabel || (campaign.objective.includes('TRAFFIC') ? 'Cliques no Link' : 'Conversões')
+                    const resultValue = campaign.objective.includes('TRAFFIC')
+                      ? campaign.clicks
+                      : (campaign.conversions > 0 ? campaign.conversions : (campaign.clicks || 0))
 
-                  return (
-                    <tr key={campaign.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                      <td className="py-3 pr-4">
-                        <Link href={`/dashboard/campaigns/${campaign.id}`} className="font-medium hover:text-primary transition-colors">
-                          {campaign.name}
-                        </Link>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <Badge variant={statusConfig[campaign.status]?.variant || 'secondary'}>
-                          {statusConfig[campaign.status]?.label || campaign.status}
-                        </Badge>
-                      </td>
-                      <td className="py-3 pr-4 text-muted-foreground text-xs">{objectiveLabels[campaign.objective] || campaign.objective}</td>
-                      <td className="py-3 pr-4 font-mono font-medium">{formatCurrency(campaign.spend)}</td>
-                      <td className="py-3 pr-4 font-mono">
-                        <span className="font-bold text-foreground">{formatNumber(resultValue)}</span>{' '}
-                        <span className="text-xs text-muted-foreground">({label})</span>
-                      </td>
-                      <td className="py-3 pr-4 font-mono">{formatNumber(campaign.clicks)}</td>
-                      <td className="py-3 pr-4 font-mono">{formatPercent(campaign.ctr)}</td>
-                      <td className="py-3 pr-4 font-mono">{formatCurrency(campaign.cpc)}</td>
-                      <td className="py-3">
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/dashboard/campaigns/${campaign.id}`}>
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          {campaign.status !== 'ARCHIVED' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setConfirmAction({
-                                  id: campaign.id,
-                                  name: campaign.name,
-                                  newStatus: campaign.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
-                                })
-                              }
-                            >
-                              {campaign.status === 'ACTIVE' ? (
-                                <Pause className="h-4 w-4 text-amber-400" />
-                              ) : (
-                                <Play className="h-4 w-4 text-emerald-400" />
-                              )}
+                    return (
+                      <tr key={campaign.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                        <td className="py-3 pr-4">
+                          <Link href={`/dashboard/campaigns/${campaign.id}`} className="font-medium hover:text-primary transition-colors">
+                            {campaign.name}
+                          </Link>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <Badge variant={statusConfig[campaign.status]?.variant || 'secondary'}>
+                            {statusConfig[campaign.status]?.label || campaign.status}
+                          </Badge>
+                        </td>
+                        <td className="py-3 pr-4 text-muted-foreground text-xs">{objectiveLabels[campaign.objective] || campaign.objective}</td>
+                        <td className="py-3 pr-4 font-mono font-medium">{formatCurrency(campaign.spend)}</td>
+                        <td className="py-3 pr-4 font-mono">
+                          <span className="font-bold text-foreground">{formatNumber(resultValue)}</span>{' '}
+                          <span className="text-xs text-muted-foreground">({label})</span>
+                        </td>
+                        <td className="py-3 pr-4 font-mono">{formatNumber(campaign.clicks)}</td>
+                        <td className="py-3 pr-4 font-mono">{formatPercent(campaign.ctr)}</td>
+                        <td className="py-3 pr-4 font-mono">{formatCurrency(campaign.cpc)}</td>
+                        <td className="py-3">
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link href={`/dashboard/campaigns/${campaign.id}`}>
+                                <Eye className="h-4 w-4" />
+                              </Link>
                             </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                            {campaign.status !== 'ARCHIVED' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  setConfirmAction({
+                                    id: campaign.id,
+                                    name: campaign.name,
+                                    newStatus: campaign.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
+                                  })
+                                }
+                              >
+                                {campaign.status === 'ACTIVE' ? (
+                                  <Pause className="h-4 w-4 text-amber-400" />
+                                ) : (
+                                  <Play className="h-4 w-4 text-emerald-400" />
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
               </tbody>
             </table>
           </div>

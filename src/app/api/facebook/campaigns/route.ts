@@ -77,10 +77,17 @@ export async function POST(request: Request) {
       const costPerLead = leads > 0 && spend > 0 ? spend / leads : 0
       const roas = spend > 0 && purchaseValue > 0 ? purchaseValue / spend : 0
 
+      const rawStatus = (c.status || '').toUpperCase()
+      const effStatus = ((c as any).effective_status || '').toUpperCase()
+      const isArchived = rawStatus === 'ARCHIVED' || effStatus === 'ARCHIVED'
+      const isActive = !isArchived && (rawStatus === 'ACTIVE' || effStatus === 'ACTIVE')
+      const finalStatus: 'ACTIVE' | 'PAUSED' | 'ARCHIVED' = isArchived ? 'ARCHIVED' : isActive ? 'ACTIVE' : 'PAUSED'
+
       return {
         id: c.id,
         name: c.name,
-        status: (c.status || (c as any).effective_status || 'PAUSED') as any,
+        status: finalStatus,
+        effectiveStatus: effStatus || finalStatus,
         objective: c.objective,
         dailyBudget: c.daily_budget ? Number(c.daily_budget) / 100 : 0,
         spend,

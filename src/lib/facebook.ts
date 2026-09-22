@@ -154,7 +154,9 @@ export async function getCampaigns(config: FacebookConfig): Promise<FacebookCamp
       config,
       {
         fields: 'id,name,status,effective_status,objective,daily_budget,lifetime_budget,created_time,start_time,stop_time',
-        effective_status: '["ACTIVE","PAUSED","ARCHIVED","IN_PROCESS","WITH_ISSUES"]',
+        filtering: JSON.stringify([
+          { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }
+        ]),
         limit: '100',
       }
     )
@@ -162,7 +164,7 @@ export async function getCampaigns(config: FacebookConfig): Promise<FacebookCamp
       return campaigns
     }
   } catch (err) {
-    console.warn('Tentativa com effective_status falhou, executando fallback sem filtro:', err)
+    console.warn('Tentativa com filtering falhou, executando fallback sem filtro:', err)
   }
 
   return fbFetchAll<FacebookCampaign>(
@@ -183,7 +185,9 @@ export async function getAdSetsByCampaign(campaignId: string, config: FacebookCo
       config,
       {
         fields: 'id,name,status,effective_status,campaign_id,daily_budget,lifetime_budget,billing_event,optimization_goal,targeting,created_time,start_time,end_time',
-        effective_status: '["ACTIVE","PAUSED","ARCHIVED","IN_PROCESS","WITH_ISSUES"]',
+        filtering: JSON.stringify([
+          { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }
+        ]),
         limit: '100',
       }
     )
@@ -212,7 +216,9 @@ export async function getAdsByCampaign(campaignId: string, config: FacebookConfi
       config,
       {
         fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
-        effective_status: '["ACTIVE","PAUSED","ARCHIVED","IN_PROCESS","WITH_ISSUES"]',
+        filtering: JSON.stringify([
+          { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED'] }
+        ]),
         limit: '100',
       }
     )

@@ -21,11 +21,16 @@ import {
   Filter,
   Sparkles,
   Info,
-  Calendar
+  Calendar,
+  Archive,
+  PauseCircle,
+  Layers
 } from 'lucide-react'
 import { useSettings } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
 
 export default function DashboardPage() {
   const settings = useSettings()
@@ -45,6 +50,8 @@ export default function DashboardPage() {
   const [hasUserManuallySelected, setHasUserManuallySelected] = useState(false)
   // Guarda o objetivo detectado automaticamente
   const [autoDetectedObjective, setAutoDetectedObjective] = useState<{ id: string; name: string } | null>(null)
+  // Status tab para a tabela (Guia separada para Arquivadas / Rodando / Pausadas / Todas)
+  const [tableStatusTab, setTableStatusTab] = useState<'ACTIVE' | 'PAUSED' | 'ARCHIVED' | 'ALL'>('ACTIVE')
 
   useEffect(() => {
     setMounted(true)
@@ -143,6 +150,20 @@ export default function DashboardPage() {
     }
     return campaigns.filter(c => c.objective === selectedObjective)
   }, [campaigns, selectedObjective])
+
+  // Contagens por status para as abas da tabela
+  const activeCount = useMemo(() => filteredCampaigns.filter(c => c.status === 'ACTIVE').length, [filteredCampaigns])
+  const pausedCount = useMemo(() => filteredCampaigns.filter(c => c.status === 'PAUSED').length, [filteredCampaigns])
+  const archivedCount = useMemo(() => filteredCampaigns.filter(c => c.status === 'ARCHIVED').length, [filteredCampaigns])
+
+  const displayedCampaigns = useMemo(() => {
+    return filteredCampaigns.filter(c => {
+      if (tableStatusTab === 'ACTIVE') return c.status === 'ACTIVE'
+      if (tableStatusTab === 'PAUSED') return c.status === 'PAUSED'
+      if (tableStatusTab === 'ARCHIVED') return c.status === 'ARCHIVED'
+      return true
+    })
+  }, [filteredCampaigns, tableStatusTab])
 
   // Cálculos consolidados das métricas filtradas
   const totalSpend = filteredCampaigns.reduce((sum, c) => sum + (c.spend || 0), 0)
@@ -489,15 +510,13 @@ export default function DashboardPage() {
       {/* Gráfico de Performance */}
       <PerformanceChart data={dailyMetrics} />
 
-      {/* Tabela Detalhada das Campanhas */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
+      {/* Tabela Detalhada das Campanhas com Guia Separada para Arquivadas */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold">Campanhas</h2>
             <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
-              {filteredCampaigns.length === campaigns.length 
-                ? `${campaigns.length} campanhas no total` 
-                : `${filteredCampaigns.length} de ${campaigns.length} exibidas`}
+              {displayedCampaigns.length} de {filteredCampaigns.length} exibidas
             </span>
           </div>
           {filteredCampaigns.length !== campaigns.length && (
@@ -514,7 +533,83 @@ export default function DashboardPage() {
             </Button>
           )}
         </div>
-        <CampaignTable campaigns={filteredCampaigns} onStatusChange={handleStatusChange} />
+
+        {/* GUIAS SEPARADAS (RODANDO / PAUSADAS / ARQUIVADAS / TODAS) */}
+        <Tabs value={tableStatusTab} onValueChange={(val) => setTableStatusTab(val as any)} className="w-full">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto h-auto p-1 bg-muted/80 gap-1 border">
+            <TabsTrigger 
+              value="ACTIVE" 
+              className="flex items-center justify-center gap-2 py-1.5 px-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-emerald-500 font-medium"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Rodando / Ativas</span>
+              <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 h-4 font-mono font-semibold">
+                {activeCount}
+              </Badge>
+            </TabsTrigger>
+
+            <TabsTrigger 
+              value="PAUSED" 
+              className="flex items-center justify-center gap-2 py-1.5 px-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-amber-500 font-medium"
+            >
+              <PauseCircle className="h-3.5 w-3.5" />
+              <span>Pausadas</span>
+              <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 h-4 font-mono">
+                {pausedCount}
+              </Badge>
+            </TabsTrigger>
+
+            <TabsTrigger 
+              value="ARCHIVED" 
+              className="flex items-center justify-center gap-2 py-1.5 px-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:text-muted-foreground font-medium"
+            >
+              <Archive className="h-3.5 w-3.5" />
+              <span>Arquivadas</span>
+              <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 h-4 font-mono">
+                {archivedCount}
+              </Badge>
+            </TabsTrigger>
+
+            <TabsTrigger 
+              value="ALL" 
+              className="flex items-center justify-center gap-2 py-1.5 px-3 text-xs sm:text-sm data-[state=active]:bg-background font-medium"
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>Todas</span>
+              <Badge variant="secondary" className="ml-1 text-[11px] px-1.5 py-0 h-4 font-mono">
+                {filteredCampaigns.length}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {tableStatusTab === 'ACTIVE' && activeCount === 0 && filteredCampaigns.length > 0 && (
+          <div className="p-4 rounded-xl border bg-muted/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+            <div>
+              <p className="font-semibold text-foreground">Nenhuma campanha ativa em veiculação no momento.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Você possui <strong>{pausedCount}</strong> campanha(s) pausada(s) e <strong>{archivedCount}</strong> arquivada(s).
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {pausedCount > 0 && (
+                <Button size="sm" variant="outline" onClick={() => setTableStatusTab('PAUSED')}>
+                  Ver Pausadas ({pausedCount})
+                </Button>
+              )}
+              {archivedCount > 0 && (
+                <Button size="sm" variant="ghost" onClick={() => setTableStatusTab('ARCHIVED')}>
+                  Ver Arquivadas ({archivedCount})
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <CampaignTable campaigns={displayedCampaigns} onStatusChange={handleStatusChange} />
       </div>
     </div>
   )
