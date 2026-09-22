@@ -20,7 +20,8 @@ import {
   ShoppingBag,
   Filter,
   Sparkles,
-  Info
+  Info,
+  Calendar
 } from 'lucide-react'
 import { useSettings } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -35,7 +36,10 @@ export default function DashboardPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isRealData, setIsRealData] = useState(false)
 
-  // Objetivo selecionado (padrão inicial ALL)
+  // Período de métricas (padrão maximum para trazer todo o histórico real)
+  const [datePreset, setDatePreset] = useState<string>('maximum')
+
+  // Objetivo selecionado (padrão inicial ALL para exibir todas as campanhas)
   const [selectedObjective, setSelectedObjective] = useState<string>('ALL')
   // Controla se o usuário escolheu o filtro manualmente
   const [hasUserManuallySelected, setHasUserManuallySelected] = useState(false)
@@ -46,7 +50,7 @@ export default function DashboardPage() {
     setMounted(true)
   }, [])
 
-  const loadRealData = async () => {
+  const loadRealData = async (preset = datePreset) => {
     if (!settings.hasFbKeys()) return
     setIsLoading(true)
     setErrorMessage(null)
@@ -58,7 +62,8 @@ export default function DashboardPage() {
         body: JSON.stringify({
           accessToken: settings.fbAccessToken,
           adAccountId: settings.fbAdAccountId,
-          useAdminToken: settings.useAdminFbToken
+          useAdminToken: settings.useAdminFbToken,
+          datePreset: preset,
         }),
       })
 
@@ -82,9 +87,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (mounted && settings.hasFbKeys()) {
-      loadRealData()
+      loadRealData(datePreset)
     }
-  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken])
+  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, settings.useAdminFbToken, datePreset])
 
   // IDENTIFICAÇÃO AUTOMÁTICA DO OBJETIVO DA CAMPANHA
   useEffect(() => {
@@ -114,18 +119,14 @@ export default function DashboardPage() {
         }
       })
 
-      // Se houver campanhas de vendas ativas (ou for o objetivo predominante), foca automaticamente em Vendas
+      // Identifica o objetivo predominante da conta
       if (salesCount > 0 && salesCount >= leadCount && salesCount >= msgCount) {
-        setSelectedObjective('OUTCOME_SALES')
         setAutoDetectedObjective({ id: 'OUTCOME_SALES', name: 'Vendas & Conversões (E-commerce / Site)' })
       } else if (msgCount > 0 && msgCount >= leadCount) {
-        setSelectedObjective('MESSAGES')
         setAutoDetectedObjective({ id: 'MESSAGES', name: 'Mensagens / WhatsApp' })
       } else if (leadCount > 0) {
-        setSelectedObjective('OUTCOME_LEADS')
         setAutoDetectedObjective({ id: 'OUTCOME_LEADS', name: 'Geração de Leads' })
       } else if (trafficCount > 0) {
-        setSelectedObjective('OUTCOME_TRAFFIC')
         setAutoDetectedObjective({ id: 'OUTCOME_TRAFFIC', name: 'Tráfego & Cliques' })
       }
     }
@@ -208,9 +209,26 @@ export default function DashboardPage() {
           <p className="text-muted-foreground mt-1">Métricas inteligentes adaptadas dinamicamente ao objetivo das suas campanhas</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={datePreset} onValueChange={(val) => { setDatePreset(val); }}>
+            <SelectTrigger className="w-[170px] h-9">
+              <Calendar className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="maximum">Todo o período</SelectItem>
+              <SelectItem value="last_30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="last_14d">Últimos 14 dias</SelectItem>
+              <SelectItem value="last_7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="this_month">Este mês</SelectItem>
+              <SelectItem value="last_month">Mês passado</SelectItem>
+              <SelectItem value="today">Hoje</SelectItem>
+              <SelectItem value="yesterday">Ontem</SelectItem>
+            </SelectContent>
+          </Select>
+
           {mounted && settings.hasFbKeys() && (
-            <Button variant="outline" size="sm" onClick={loadRealData} disabled={isLoading}>
+            <Button variant="outline" size="sm" onClick={() => loadRealData(datePreset)} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Sincronizar
             </Button>
@@ -225,10 +243,39 @@ export default function DashboardPage() {
             <Filter className="h-4 w-4 text-primary" />
             <span>Filtrar Métricas por Objetivo da Campanha:</span>
           </div>
-          {autoDetectedObjective && !hasUserManuallySelected && (
-            <p className="text-xs text-primary flex items-center gap-1.5 font-medium">
-              <Sparkles className="h-3.5 w-3.5" />
-              Objetivo detectado automaticamente: <strong>{autoDetectedObjective.name}</strong>
+          {autoDetectedObjective && selectedObjective === 'ALL' && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <p className="text-xs text-primary flex items-center gap-1 font-medium">
+                <Sparkles className="h-3.5 w-3.5" />
+                Foco sugerido: <strong>{autoDetectedObjective.name}</strong>
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 px-2 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                onClick={() => {
+                  setSelectedObjective(autoDetectedObjective.id)
+                  setHasUserManuallySelected(true)
+                }}
+              >
+                Ativar Modo
+              </Button>
+            </div>
+          )}
+          {selectedObjective !== 'ALL' && (
+            <p className="text-xs text-muted-foreground flex items-center gap-2 pt-0.5">
+              <span>Filtrado por: <strong>{selectedObjective}</strong> ({filteredCampaigns.length} de {campaigns.length} campanhas)</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1 text-xs text-primary underline"
+                onClick={() => {
+                  setSelectedObjective('ALL')
+                  setHasUserManuallySelected(true)
+                }}
+              >
+                Ver todas ({campaigns.length})
+              </Button>
             </p>
           )}
         </div>
@@ -443,7 +490,32 @@ export default function DashboardPage() {
       <PerformanceChart data={dailyMetrics} />
 
       {/* Tabela Detalhada das Campanhas */}
-      <CampaignTable campaigns={filteredCampaigns} onStatusChange={handleStatusChange} />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold">Campanhas</h2>
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
+              {filteredCampaigns.length === campaigns.length 
+                ? `${campaigns.length} campanhas no total` 
+                : `${filteredCampaigns.length} de ${campaigns.length} exibidas`}
+            </span>
+          </div>
+          {filteredCampaigns.length !== campaigns.length && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => {
+                setSelectedObjective('ALL')
+                setHasUserManuallySelected(true)
+              }}
+            >
+              Exibir todas as {campaigns.length} campanhas
+            </Button>
+          )}
+        </div>
+        <CampaignTable campaigns={filteredCampaigns} onStatusChange={handleStatusChange} />
+      </div>
     </div>
   )
 }

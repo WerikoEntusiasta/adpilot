@@ -1,11 +1,11 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState, useMemo } from 'react'
 import { CampaignTable } from '@/components/dashboard/campaign-table'
 import type { Campaign } from '@/lib/mock-data'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, Filter, RefreshCw, AlertCircle } from 'lucide-react'
+import { Search, Filter, RefreshCw, AlertCircle, Calendar } from 'lucide-react'
 import { useSettings } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 
@@ -16,6 +16,7 @@ export default function CampaignsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [objectiveFilter, setObjectiveFilter] = useState<string>('all')
+  const [datePreset, setDatePreset] = useState<string>('maximum')
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isRealData, setIsRealData] = useState(false)
@@ -24,7 +25,7 @@ export default function CampaignsPage() {
     setMounted(true)
   }, [])
 
-  const loadRealCampaigns = async () => {
+  const loadRealCampaigns = async (preset = datePreset) => {
     if (!settings.hasFbKeys()) return
     setIsLoading(true)
     setErrorMsg(null)
@@ -36,6 +37,7 @@ export default function CampaignsPage() {
           accessToken: settings.fbAccessToken,
           adAccountId: settings.fbAdAccountId,
           useAdminToken: settings.useAdminFbToken,
+          datePreset: preset,
         }),
       })
 
@@ -56,9 +58,9 @@ export default function CampaignsPage() {
 
   useEffect(() => {
     if (mounted && settings.hasFbKeys()) {
-      loadRealCampaigns()
+      loadRealCampaigns(datePreset)
     }
-  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId])
+  }, [mounted, settings.fbAccessToken, settings.fbAdAccountId, datePreset])
 
   const filtered = useMemo(() => {
     return campaigns.filter(c => {
@@ -116,7 +118,23 @@ export default function CampaignsPage() {
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Select value={datePreset} onValueChange={setDatePreset}>
+            <SelectTrigger className="w-[170px]">
+              <Calendar className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="maximum">Todo o período</SelectItem>
+              <SelectItem value="last_30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="last_14d">Últimos 14 dias</SelectItem>
+              <SelectItem value="last_7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="this_month">Este mês</SelectItem>
+              <SelectItem value="last_month">Mês passado</SelectItem>
+              <SelectItem value="today">Hoje</SelectItem>
+              <SelectItem value="yesterday">Ontem</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[140px]">
               <Filter className="h-4 w-4 mr-2" />
@@ -143,6 +161,20 @@ export default function CampaignsPage() {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+        <span>Mostrando <strong>{filtered.length}</strong> de <strong>{campaigns.length}</strong> campanhas carregadas</span>
+        {statusFilter !== 'all' || objectiveFilter !== 'all' || search ? (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 text-xs text-primary" 
+            onClick={() => { setStatusFilter('all'); setObjectiveFilter('all'); setSearch(''); }}
+          >
+            Limpar filtros
+          </Button>
+        ) : null}
       </div>
 
       <CampaignTable campaigns={filtered} onStatusChange={handleStatusChange} />

@@ -73,6 +73,17 @@ function normalizeAdAccountId(id: string): string {
   return trimmed.startsWith('act_') ? trimmed : 'act_' + trimmed
 }
 
+interface FbPagedResponse<T> {
+  data?: T[]
+  paging?: {
+    cursors?: {
+      before?: string
+      after?: string
+    }
+    next?: string
+  }
+}
+
 async function fbFetch<T>(endpoint: string, config: FacebookConfig, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(GRAPH_API_BASE + endpoint)
   url.searchParams.set('access_token', config.accessToken.trim())
@@ -88,49 +99,143 @@ async function fbFetch<T>(endpoint: string, config: FacebookConfig, params: Reco
   return res.json() as Promise<T>
 }
 
-// Buscar todas as campanhas da conta
+// Busca com paginação automática (resolve limites de 25/100 e traz todas as páginas)
+async function fbFetchAll<T>(
+  endpoint: string,
+  config: FacebookConfig,
+  params: Record<string, string> = {},
+  maxItems: number = 1000
+): Promise<T[]> {
+  let allData: T[] = []
+  let nextUrl: string | null = null
+  let pageCount = 0
+
+  const url = new URL(GRAPH_API_BASE + endpoint)
+  url.searchParams.set('access_token', config.accessToken.trim())
+  for (const [k, v] of Object.entries(params)) {
+    url.searchParams.set(k, v)
+  }
+
+  nextUrl = url.toString()
+
+  while (nextUrl && allData.length < maxItems && pageCount < 15) {
+    pageCount++
+    const res = await fetch(nextUrl)
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}))
+      if (allData.length === 0) {
+        throw new Error(error?.error?.message || 'Facebook API error (' + res.status + '): ' + res.statusText)
+      }
+      console.warn('Aviso de paginação do Facebook:', error)
+      break
+    }
+
+    const json: FbPagedResponse<T> = await res.json()
+    if (json.data && Array.isArray(json.data)) {
+      allData = allData.concat(json.data)
+    }
+
+    if (json.paging?.next && json.data && json.data.length > 0) {
+      nextUrl = json.paging.next
+    } else {
+      nextUrl = null
+    }
+  }
+
+  return allData
+}
+
+// Buscar todas as campanhas da conta com paginação e todos os status
 export async function getCampaigns(config: FacebookConfig): Promise<FacebookCampaign[]> {
   const accountId = normalizeAdAccountId(config.adAccountId)
-  const result = await fbFetch<{ data: FacebookCampaign[] }>(
+  try {
+    const campaigns = await fbFetchAll<FacebookCampaign>(
+      '/' + accountId + '/campaigns',
+      config,
+      {
+        fields: 'id,name,status,effective_status,objective,daily_budget,lifetime_budget,created_time,start_time,stop_time',
+        effective_status: '["ACTIVE","PAUSED","ARCHIVED","IN_PROCESS","WITH_ISSUES"]',
+        limit: '100',
+      }
+    )
+    if (campaigns && campaigns.length > 0) {
+      return campaigns
+    }
+  } catch (err) {
+    console.warn('Tentativa com effective_status falhou, executando fallback sem filtro:', err)
+  }
+
+  return fbFetchAll<FacebookCampaign>(
     '/' + accountId + '/campaigns',
     config,
     {
-      fields: 'id,name,status,objective,daily_budget,lifetime_budget,created_time,start_time,stop_time',
+      fields: 'id,name,status,effective_status,objective,daily_budget,lifetime_budget,created_time,start_time,stop_time',
       limit: '100',
     }
   )
-  return result.data || []
 }
 
-// Buscar Conjuntos de Anúncios de uma Campanha
+// Buscar Conjuntos de Anúncios de uma Campanha (com paginação)
 export async function getAdSetsByCampaign(campaignId: string, config: FacebookConfig): Promise<FacebookAdSet[]> {
-  const result = await fbFetch<{ data: FacebookAdSet[] }>(
+  try {
+    const adSets = await fbFetchAll<FacebookAdSet>(
+      '/' + campaignId + '/adsets',
+      config,
+      {
+        fields: 'id,name,status,effective_status,campaign_id,daily_budget,lifetime_budget,billing_event,optimization_goal,targeting,created_time,start_time,end_time',
+        effective_status: '["ACTIVE","PAUSED","ARCHIVED","IN_PROCESS","WITH_ISSUES"]',
+        limit: '100',
+      }
+    )
+    if (adSets && adSets.length > 0) {
+      return adSets
+    }
+  } catch (err) {
+    console.warn('Fallback adsets:', err)
+  }
+
+  return fbFetchAll<FacebookAdSet>(
     '/' + campaignId + '/adsets',
     config,
     {
-      fields: 'id,name,status,campaign_id,daily_budget,lifetime_budget,billing_event,optimization_goal,targeting,created_time,start_time,end_time',
+      fields: 'id,name,status,effective_status,campaign_id,daily_budget,lifetime_budget,billing_event,optimization_goal,targeting,created_time,start_time,end_time',
       limit: '100',
     }
   )
-  return result.data || []
 }
 
-// Buscar Anúncios de uma Campanha (com criativos)
+// Buscar Anúncios de uma Campanha (com criativos e paginação)
 export async function getAdsByCampaign(campaignId: string, config: FacebookConfig): Promise<FacebookAd[]> {
-  const result = await fbFetch<{ data: any[] }>(
+  try {
+    const ads = await fbFetchAll<FacebookAd>(
+      '/' + campaignId + '/ads',
+      config,
+      {
+        fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
+        effective_status: '["ACTIVE","PAUSED","ARCHIVED","IN_PROCESS","WITH_ISSUES"]',
+        limit: '100',
+      }
+    )
+    if (ads && ads.length > 0) {
+      return ads
+    }
+  } catch (err) {
+    console.warn('Fallback ads:', err)
+  }
+
+  return fbFetchAll<FacebookAd>(
     '/' + campaignId + '/ads',
     config,
     {
-      fields: 'id,name,status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
+      fields: 'id,name,status,effective_status,adset_id,campaign_id,creative{id,name,title,body,image_url,thumbnail_url,object_story_spec}',
       limit: '100',
     }
   )
-  return result.data || []
 }
 
 // Buscar Insights a nível de AdSet
 export async function getAdSetInsights(campaignId: string, config: FacebookConfig, datePreset: string = 'maximum'): Promise<FacebookInsight[]> {
-  const result = await fbFetch<{ data: FacebookInsight[] }>(
+  return fbFetchAll<FacebookInsight>(
     '/' + campaignId + '/insights',
     config,
     {
@@ -140,12 +245,11 @@ export async function getAdSetInsights(campaignId: string, config: FacebookConfi
       limit: '100',
     }
   )
-  return result.data || []
 }
 
 // Buscar Insights a nível de Ad (Anúncio)
 export async function getAdInsights(campaignId: string, config: FacebookConfig, datePreset: string = 'maximum'): Promise<FacebookInsight[]> {
-  const result = await fbFetch<{ data: FacebookInsight[] }>(
+  return fbFetchAll<FacebookInsight>(
     '/' + campaignId + '/insights',
     config,
     {
@@ -155,16 +259,15 @@ export async function getAdInsights(campaignId: string, config: FacebookConfig, 
       limit: '100',
     }
   )
-  return result.data || []
 }
 
-// Buscar insights das campanhas
+// Buscar insights de todas as campanhas (com paginação)
 export async function getCampaignInsights(
   config: FacebookConfig,
   datePreset: string = 'maximum'
 ): Promise<FacebookInsight[]> {
   const accountId = normalizeAdAccountId(config.adAccountId)
-  const result = await fbFetch<{ data: FacebookInsight[] }>(
+  return fbFetchAll<FacebookInsight>(
     '/' + accountId + '/insights',
     config,
     {
@@ -174,7 +277,6 @@ export async function getCampaignInsights(
       limit: '100',
     }
   )
-  return result.data || []
 }
 
 // Buscar insights diários (para gráficos)

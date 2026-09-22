@@ -42,9 +42,11 @@ export async function POST(request: Request) {
 
     const config: FacebookConfig = { accessToken, adAccountId }
 
+    const effectivePreset = datePreset || 'maximum'
+
     const [campaigns, insights, daily] = await Promise.all([
       getCampaigns(config),
-      getCampaignInsights(config, datePreset || 'last_30d'),
+      getCampaignInsights(config, effectivePreset),
       getDailyInsights(config, datePreset || 'last_30d'),
     ])
 
@@ -78,7 +80,7 @@ export async function POST(request: Request) {
       return {
         id: c.id,
         name: c.name,
-        status: c.status,
+        status: (c.status || (c as any).effective_status || 'PAUSED') as any,
         objective: c.objective,
         dailyBudget: c.daily_budget ? Number(c.daily_budget) / 100 : 0,
         spend,
