@@ -44,6 +44,12 @@ export default function GuardianPage() {
   }, [])
 
   const handleRunScan = async () => {
+    const activeRules = guardian.rules.filter(r => r.enabled)
+    if (activeRules.length === 0) {
+      setScanFeedback('Nenhuma regra está ativada. Ative as chaves desejadas na seção "Configuração das Regras de Segurança" abaixo para o Guardião monitorar seus anúncios.')
+      return
+    }
+
     guardian.setIsScanning(true)
     setScanFeedback(null)
     try {
@@ -66,7 +72,7 @@ export default function GuardianPage() {
         if (criticalCount > 0) {
           setScanFeedback(`Varredura concluída: ${criticalCount} incidente(s) crítico(s) de stop-loss detectado(s)!`)
         } else {
-          setScanFeedback(`Varredura concluída: Todos os anúncios estão em conformidade com as regras de segurança!`)
+          setScanFeedback(`Varredura concluída: Todos os anúncios estão em conformidade com as regras ativadas!`)
         }
       } else {
         setScanFeedback('Erro ao executar varredura.')
@@ -78,9 +84,9 @@ export default function GuardianPage() {
     guardian.setIsScanning(false)
   }
 
-  // Executar varredura inicial se não houver varredura recente
+  // Executar varredura inicial apenas se houver regras ativas e não houver varredura recente
   useEffect(() => {
-    if (mounted && guardian.incidents.length === 0) {
+    if (mounted && guardian.incidents.length === 0 && guardian.rules.some(r => r.enabled)) {
       handleRunScan()
     }
   }, [mounted])
@@ -171,14 +177,27 @@ export default function GuardianPage() {
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <p className="text-lg font-bold text-foreground">Monitorando</p>
+              {guardian.rules.some(r => r.enabled) ? (
+                <>
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <p className="text-lg font-bold text-foreground">
+                    Monitorando ({guardian.rules.filter(r => r.enabled).length} ativas)
+                  </p>
+                </>
+              ) : (
+                <>
+                  <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40"></span>
+                  <p className="text-lg font-bold text-muted-foreground">Em Espera (Desligado)</p>
+                </>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Última checagem: {guardian.lastScanAt || 'Agora'}
+              {guardian.rules.some(r => r.enabled)
+                ? `Última checagem: ${guardian.lastScanAt || 'Agora'}`
+                : 'Ative as regras desejadas abaixo para iniciar'}
             </p>
           </CardContent>
         </Card>

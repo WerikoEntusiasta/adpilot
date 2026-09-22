@@ -59,7 +59,7 @@ export const defaultGuardianRules: GuardianRule[] = [
     name: 'Stop-Loss Anti-Prejuízo (Zero Conversões)',
     description: 'Pausa o anúncio ou emite alerta crítico se gastar mais que o limite sem gerar nenhuma venda ou conversa.',
     category: 'STOP_LOSS',
-    enabled: true,
+    enabled: false,
     threshold: 50, // R$ 50
     thresholdUnit: 'BRL',
     actionType: 'PAUSE',
@@ -69,7 +69,7 @@ export const defaultGuardianRules: GuardianRule[] = [
     name: 'Teto Máximo de CPA / Custo por Conversão',
     description: 'Identifica anúncios cujo custo por aquisição estourou a margem aceitável.',
     category: 'CPA_CEILING',
-    enabled: true,
+    enabled: false,
     threshold: 40, // R$ 40
     thresholdUnit: 'BRL',
     actionType: 'NOTIFY',
@@ -79,7 +79,7 @@ export const defaultGuardianRules: GuardianRule[] = [
     name: 'Alerta de Fadiga & Saturação de Público',
     description: 'Detecta anúncios onde o mesmo usuário já foi impactado excessivas vezes e o CTR começou a despencar.',
     category: 'FATIGUE',
-    enabled: true,
+    enabled: false,
     threshold: 3.2, // Freq > 3.2
     thresholdUnit: 'NUMBER',
     actionType: 'NOTIFY',
@@ -89,7 +89,7 @@ export const defaultGuardianRules: GuardianRule[] = [
     name: 'Oportunidade de Escala de Campeões',
     description: 'Identifica anúncios com ROAS excepcional e estabilidade de conversões para aumento de 15% no orçamento.',
     category: 'SCALE',
-    enabled: true,
+    enabled: false,
     threshold: 2.8, // ROAS > 2.8x
     thresholdUnit: 'NUMBER',
     actionType: 'SCALE_BUDGET',
@@ -147,7 +147,7 @@ export const useGuardianStore = create<GuardianState>()(
         }),
     }),
     {
-      name: 'adpilot_guardian_store_v1',
+      name: 'adpilot_guardian_store_v2',
     }
   )
 )
