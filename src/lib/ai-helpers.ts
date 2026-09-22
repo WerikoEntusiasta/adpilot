@@ -124,4 +124,103 @@ export async function parseAiCompletionResponse(res: Response): Promise<{ conten
   }
 }
 
+/**
+ * Extrai sugestões estruturadas mesmo de respostas com JSON truncado ou markdown irregular
+ */
+export function extractStructuredAiSuggestions(rawContent: string): any[] {
+  if (!rawContent || typeof rawContent !== 'string') return []
+
+  const cleaned = rawContent
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim()
+
+  // 1. Tentar parse direto do JSON completo
+  try {
+    const direct = JSON.parse(cleaned)
+    if (Array.isArray(direct)) return direct
+    if (Array.isArray(direct.suggestions)) return direct.suggestions
+  } catch {}
+
+  // 2. Tentar encontrar envelope { "suggestions": [ ... ] }
+  const firstBrace = cleaned.indexOf('{')
+  if (firstBrace !== -1) {
+    const candidate = cleaned.slice(firstBrace)
+    try {
+      const parsed = JSON.parse(candidate)
+      if (Array.isArray(parsed.suggestions)) return parsed.suggestions
+    } catch {}
+
+    // 3. Reparar JSON truncado (quando estourou limite de tokens e cortou antes de fechar)
+    const lastCloseBrace = candidate.lastIndexOf('}')
+    if (lastCloseBrace !== -1) {
+      const truncated = candidate.slice(0, lastCloseBrace + 1)
+      const attempts = [
+        truncated + ']}',
+        truncated + '}',
+        truncated + '"]}',
+        truncated + '"}]}',
+      ]
+      for (const attempt of attempts) {
+        try {
+          const repaired = JSON.parse(attempt)
+          if (Array.isArray(repaired.suggestions) && repaired.suggestions.length > 0) {
+            return repaired.suggestions
+          }
+        } catch {}
+      }
+    }
+  }
+
+  // 4. Extração individual de cada bloco de sugestão via Regex
+  const blockRegex = /\{[\s\n\r]*"id"[\s\S]*?"(title|action|description)"[\s\S]*?\}(?=\s*,\s*\{|\s*\])/g
+  const matches = cleaned.match(blockRegex)
+  if (matches && matches.length > 0) {
+    const recovered: any[] = []
+    for (const m of matches) {
+      try {
+        const item = JSON.parse(m)
+        if (item && item.title) recovered.push(item)
+      } catch {
+        try {
+          const item = JSON.parse(m + '}')
+          if (item && item.title) recovered.push(item)
+        } catch {}
+      }
+    }
+    if (recovered.length > 0) return recovered
+  }
+
+  return []
+}
+
+/**
+ * Desempacota e limpa sugestões, garantindo que nenhum JSON cru seja exibido na UI
+ */
+export function unpackAndSanitizeSuggestions(list: any[]): any[] {
+  if (!Array.isArray(list)) return []
+  const result: any[] = []
+
+  for (const item of list) {
+    if (!item) continue
+
+    // Se o item contém um JSON cru embutido dentro da description (como aconteceu no erro do screenshot)
+    if (
+      typeof item.description === 'string' &&
+      (item.description.includes('"suggestions"') || item.description.trim().startsWith('{'))
+    ) {
+      const extracted = extractStructuredAiSuggestions(item.description)
+      if (extracted.length > 0) {
+        result.push(...extracted)
+        continue
+      }
+    }
+
+    result.push(item)
+  }
+
+  return result
+}
+
 

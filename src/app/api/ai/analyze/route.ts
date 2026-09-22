@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getChatCompletionsUrl, getAiAuthHeaders, getResolvedAiConfig, parseAiCompletionResponse } from '@/lib/ai-helpers'
+import {
+  getChatCompletionsUrl,
+  getAiAuthHeaders,
+  getResolvedAiConfig,
+  parseAiCompletionResponse,
+  extractStructuredAiSuggestions,
+  unpackAndSanitizeSuggestions,
+} from '@/lib/ai-helpers'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
@@ -38,21 +45,27 @@ export async function POST(request: Request) {
     const url = getChatCompletionsUrl(finalEndpoint)
     const headers = getAiAuthHeaders(finalApiKey, finalEndpoint)
 
-    const systemPrompt = "Você é o AdPilot, Especialista Master em Meta Ads e Tráfego Pago. " +
-      "Analise as métricas reais fornecidas (Gasto, Impressões, Cliques, CTR, CPC, Vendas, Leads). " +
-      "Identifique gargalos, oportunidades de escala ou problemas de criativo e responda SOMENTE com um JSON válido no seguinte formato:\n" +
+    const systemPrompt = "Você é o AdPilot, Especialista Master em Meta Ads e Gestão de Tráfego Pago.\n" +
+      "Analise as métricas reais fornecidas (Gasto, Impressões, Cliques, CTR, CPC, Vendas, Leads, ROAS).\n" +
+      "Gere exatamente entre 3 a 5 recomendações cirúrgicas e prioritárias. Seja ultra-direto, focado no ROI do cliente e explique em linguagem clara para o empresário.\n" +
+      "Classifique o tipo como:\n" +
+      "- 'critical': quando há dinheiro sendo perdido ou ROAS < 1.0 (Ação imediata)\n" +
+      "- 'warning': gargalos de CTR baixo, landing page ou público cansado\n" +
+      "- 'opportunity': campanhas que podem ser escaladas com segurança\n" +
+      "- 'improvement': ajustes de orçamento ou criativos\n\n" +
+      "Responda ESTRITAMENTE com um JSON válido no formato:\n" +
       JSON.stringify({
         suggestions: [
           {
             id: "sug_1",
-            type: "improvement", // "improvement" | "warning" | "new_campaign" | "opportunity"
+            type: "critical", // "critical" | "warning" | "opportunity" | "improvement"
             impact: "high", // "high" | "medium" | "low"
-            title: "Título da recomendação",
-            description: "Explicação técnica e didática do motivo baseado nos dados reais.",
-            metrics: { estimatedImprovement: "+20% ROAS" },
+            title: "Título direto da recomendação",
+            description: "Diagnóstico claro em 2-3 frases explicando o que os números revelam.",
+            metrics: { estimatedImprovement: "Evitar prejuízo de R$ 540/mês e buscar ROAS 2.0" },
             action: {
-              type: "increase_budget",
-              description: "Ação prática recomendada para o gestor executar"
+              type: "restructure_campaign",
+              description: "Passo a passo prático do que fazer agora"
             }
           }
         ]
@@ -75,7 +88,7 @@ export async function POST(request: Request) {
           }
         ],
         temperature: 0.3,
-        max_tokens: 2500
+        max_tokens: 4000
       })
     })
 
@@ -86,38 +99,29 @@ export async function POST(request: Request) {
 
     const { content } = await parseAiCompletionResponse(res)
     
-    let parsed: any = null
-    try {
-      const cleaned = content.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim()
-      parsed = JSON.parse(cleaned)
-    } catch {
-      const jsonMatch = content.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        try {
-          parsed = JSON.parse(jsonMatch[0])
-        } catch {}
-      }
+    // Extrai sugestões mesmo se a resposta tiver sofrido truncamento ou quebra de sintaxe
+    const rawSuggestions = extractStructuredAiSuggestions(content)
+    const sanitizedSuggestions = unpackAndSanitizeSuggestions(rawSuggestions)
+
+    if (sanitizedSuggestions.length > 0) {
+      return NextResponse.json({ suggestions: sanitizedSuggestions })
     }
 
-    if (parsed && Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0) {
-      return NextResponse.json({ suggestions: parsed.suggestions })
-    }
-
-    // Se o modelo retornou texto livre de análise sem o envelope JSON esperado, converte para sugestão estruturada
-    if (content && content.trim().length > 10) {
-      const sanitizedText = content.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim()
+    // Se o modelo retornou texto puramente descritivo (sem chaves nem JSON), formata como recomendação amigável
+    if (content && content.trim().length > 15 && !content.includes('"suggestions"') && !content.trim().startsWith('{')) {
+      const cleanProse = content.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim()
       return NextResponse.json({
         suggestions: [
           {
             id: 'sug_ai_analysis',
             type: 'improvement',
             impact: 'high',
-            title: 'Diagnóstico das Campanhas por Especialista IA',
-            description: sanitizedText,
-            metrics: { estimatedImprovement: 'Otimização Estratégica' },
+            title: 'Diagnóstico Estratégico das Campanhas',
+            description: cleanProse,
+            metrics: { estimatedImprovement: 'Otimização de Performance' },
             action: {
               type: 'review_strategy',
-              description: 'Revisar e implementar as diretrizes detalhadas pela IA'
+              description: 'Revisar métricas e aplicar as diretrizes recomendadas'
             }
           }
         ]

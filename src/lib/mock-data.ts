@@ -36,7 +36,7 @@ export interface DailyMetric {
 
 export interface AiSuggestion {
   id: string
-  type: 'improvement' | 'new_campaign' | 'warning' | 'opportunity'
+  type: 'improvement' | 'new_campaign' | 'warning' | 'opportunity' | 'critical'
   title: string
   description: string
   impact: 'high' | 'medium' | 'low'

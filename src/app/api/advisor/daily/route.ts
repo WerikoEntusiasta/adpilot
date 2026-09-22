@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { unpackAndSanitizeSuggestions } from '@/lib/ai-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -27,7 +28,8 @@ export async function GET(request: Request) {
 
     if (record) {
       try {
-        const suggestions = JSON.parse(record.suggestions)
+        const raw = JSON.parse(record.suggestions)
+        const suggestions = unpackAndSanitizeSuggestions(raw)
         return NextResponse.json({
           date: record.date,
           createdAt: record.createdAt,
@@ -52,10 +54,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Usuário não autenticado' }, { status: 401 })
     }
 
-    const { suggestions } = await request.json()
-    if (!suggestions || !Array.isArray(suggestions)) {
+    const { suggestions: rawSuggestions } = await request.json()
+    if (!rawSuggestions || !Array.isArray(rawSuggestions)) {
       return NextResponse.json({ error: 'Sugestões inválidas' }, { status: 400 })
     }
+
+    const suggestions = unpackAndSanitizeSuggestions(rawSuggestions)
 
     const today = new Intl.DateTimeFormat('pt-BR', {
       timeZone: 'America/Sao_Paulo',
