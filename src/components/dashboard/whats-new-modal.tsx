@@ -21,6 +21,7 @@ import {
   Layers,
   ArrowRight,
   CheckCircle2,
+  Activity,
 } from 'lucide-react'
 
 const STORAGE_KEY = 'adpilot_whats_new_v2_4_seen'
@@ -57,6 +58,13 @@ export function WhatsNewModal() {
   if (!mounted) return null
 
   const newFeatures = [
+    {
+      icon: Activity,
+      color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+      title: 'Meta Health Score & Auditoria de Conta (0 a 100)',
+      description:
+        'Auditoria instantânea de 5 pilares com pontuação de saúde, detector de Aprendizado Limitado (Learning Limited), ralo de orçamento e checklist anti-desperdício.',
+    },
     {
       icon: Clock,
       color: 'text-amber-400 bg-amber-500/10 border-amber-500/20',

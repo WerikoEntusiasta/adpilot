@@ -20,7 +20,8 @@ import {
   HelpCircle,
   Trophy,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Activity
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-store'
 import { useSettings } from '@/lib/store'
@@ -29,6 +30,7 @@ import { WhatsNewModal } from '@/components/dashboard/whats-new-modal'
 
 const navItems = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
+  { href: '/dashboard/audit', label: 'Auditoria & Health', icon: Activity },
   { href: '/dashboard/campaigns', label: 'Campanhas', icon: Megaphone },
   { href: '/dashboard/creatives', label: 'Criativos & Fadiga', icon: Trophy },
   { href: '/dashboard/guardian', label: 'Guardião', icon: ShieldAlert },

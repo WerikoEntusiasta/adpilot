@@ -495,3 +495,34 @@ export async function updateAdStatus(adId: string, status: 'ACTIVE' | 'PAUSED', 
   }
   return { success: true }
 }
+
+// Buscar todos os conjuntos de anúncios (AdSets) da conta
+export async function getAccountAdSets(config: FacebookConfig): Promise<FacebookAdSet[]> {
+  const accountId = normalizeAdAccountId(config.adAccountId)
+  try {
+    const adSets = await fbFetchAll<FacebookAdSet>(
+      '/' + accountId + '/adsets',
+      config,
+      {
+        fields: 'id,name,status,effective_status,campaign_id,daily_budget,lifetime_budget,optimization_goal,targeting,learning_stage_info',
+        limit: '150',
+      }
+    )
+    if (adSets && adSets.length > 0) return adSets
+  } catch (err) {
+    console.warn('Fallback getAccountAdSets:', err)
+  }
+
+  return fbFetchAll<FacebookAdSet>(
+    '/' + accountId + '/adsets',
+    config,
+    {
+      fields: 'id,name,status,effective_status,campaign_id,daily_budget,lifetime_budget,optimization_goal,targeting,learning_stage_info',
+      filtering: JSON.stringify([
+        { field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'ARCHIVED', 'IN_PROCESS', 'WITH_ISSUES', 'PENDING_REVIEW', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED'] }
+      ]),
+      limit: '150',
+    }
+  )
+}
+

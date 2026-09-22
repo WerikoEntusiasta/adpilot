@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Calendar,
   Zap,
+  Activity,
 } from 'lucide-react'
 
 export default function ChangelogPage() {
@@ -29,10 +30,17 @@ export default function ChangelogPage() {
       version: 'v2.4.0',
       date: 'Setembro 2026',
       badge: 'Versão Mais Recente',
-      title: 'Reprodutor de Vídeos, Dayparting 7x24 e Seletor Global de Contas',
+      title: 'Meta Health Score, Reprodutor de Vídeos, Dayparting 7x24 e Multi-Contas',
       description:
-        'Uma atualização focada em inteligência operacional, reprodução multimídia de criativos e flexibilidade multi-conta.',
+        'Uma atualização focada em inteligência operacional, diagnóstico algorítmico, reprodução multimídia de criativos e flexibilidade multi-conta.',
       changes: [
+        {
+          type: 'NOVO',
+          icon: Activity,
+          title: 'Meta Health Score & Auditoria de Conta em 1 Clique (0 a 100)',
+          description:
+            'Diagnosticador inteligente que escaneia toda a conta do Meta Ads e avalia 5 pilares críticos: Aprendizado Limitado, Ralo de Orçamento, Diversidade de Formatos, Concentração 80/20 e Saturação de Frequência, com checklist anti-desperdício.',
+        },
         {
           type: 'NOVO',
           icon: Film,
