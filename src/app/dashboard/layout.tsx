@@ -28,18 +28,50 @@ import { useSettings } from '@/lib/store'
 import { HeaderAccountSwitcher } from '@/components/dashboard/header-account-switcher'
 import { WhatsNewModal } from '@/components/dashboard/whats-new-modal'
 
-const navItems = [
-  { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
-  { href: '/dashboard/audit', label: 'Auditoria & Health', icon: Activity },
-  { href: '/dashboard/campaigns', label: 'Campanhas', icon: Megaphone },
-  { href: '/dashboard/creatives', label: 'Criativos & Fadiga', icon: Trophy },
-  { href: '/dashboard/guardian', label: 'Guardião', icon: ShieldAlert },
-  { href: '/dashboard/advisor', label: 'IA Advisor', icon: Brain },
-  { href: '/dashboard/planner', label: 'Planejador', icon: CalendarPlus },
-  { href: '/dashboard/changelog', label: 'O Que Há de Novo', icon: Sparkles },
-  { href: '/dashboard/meta-support', label: 'Central de Ajuda', icon: HelpCircle },
-  { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy },
-  { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
+interface NavSection {
+  title: string
+  items: Array<{
+    href: string
+    label: string
+    icon: any
+    badge?: string
+    badgeColor?: string
+  }>
+}
+
+const navSections: NavSection[] = [
+  {
+    title: 'ANÁLISE & GESTÃO',
+    items: [
+      { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
+      { href: '/dashboard/campaigns', label: 'Campanhas', icon: Megaphone },
+      { href: '/dashboard/creatives', label: 'Criativos & Vídeos', icon: Trophy },
+    ],
+  },
+  {
+    title: 'INTELIGÊNCIA & AUTOMAÇÃO',
+    items: [
+      { href: '/dashboard/audit', label: 'Auditoria de Conta', icon: Activity, badge: 'Score' },
+      { href: '/dashboard/advisor', label: 'IA Advisor', icon: Brain, badge: 'IA' },
+      { href: '/dashboard/guardian', label: 'Guardião Stop-Loss', icon: ShieldAlert },
+      { href: '/dashboard/planner', label: 'Planejador de Metas', icon: CalendarPlus },
+    ],
+  },
+  {
+    title: 'SUPORTE & SISTEMA',
+    items: [
+      {
+        href: '/dashboard/changelog',
+        label: 'O Que Há de Novo',
+        icon: Sparkles,
+        badge: 'Novo',
+        badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      },
+      { href: '/dashboard/meta-support', label: 'Central de Ajuda', icon: HelpCircle },
+      { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy },
+      { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
+    ],
+  },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -138,28 +170,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <Separator />
 
-          {/* Nav */}
-          <nav className="flex-1 px-3 py-4 space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || 
-                (item.href !== '/dashboard' && pathname.startsWith(item.href))
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
-              )
-            })}
+          {/* Nav Organizado por Seções de Experiência */}
+          <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
+            {navSections.map((section, sIdx) => (
+              <div key={sIdx} className="space-y-1">
+                <span className="px-3 text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase block">
+                  {section.title}
+                </span>
+                <div className="space-y-0.5 pt-0.5">
+                  {section.items.map((item) => {
+                    const isActive =
+                      pathname === item.href ||
+                      (item.href !== '/dashboard' && pathname.startsWith(item.href))
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          'flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-colors',
+                          isActive
+                            ? 'bg-primary/10 text-primary font-semibold'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span
+                            className={cn(
+                              'text-[9px] font-bold px-1.5 py-0.5 rounded border',
+                              item.badgeColor || 'bg-primary/10 text-primary border-primary/20'
+                            )}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
 
           {/* Footer User & Logout */}
